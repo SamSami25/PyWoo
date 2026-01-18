@@ -29,7 +29,7 @@ class Ui_Dialog_urlWoocommerce(object):
         self.lb_nombre.setGeometry(QRect(10, 10, 531, 51))
         self.lb_nombre.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
 "color: rgb(255, 255, 255);\n"
-"font: 87 12pt \"Arial Black\"\n"
+"font: 87 12pt \"Arial Black\";\n"
 "border-radius: 10px; \n"
 "padding: 8px 12px;")
         self.lb_nombre.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)

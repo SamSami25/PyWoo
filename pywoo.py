@@ -2,7 +2,7 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from app.core.credenciales_view import VentanaCredenciales
-from app.menu.menu_view import Ui_MainW_menu
+from app.menu.ui.ui_view_menu import Ui_MainW_menu
 from scripts.compilar_ui import compilar_ui
 
 

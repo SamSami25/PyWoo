@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QTableWidgetItem
 from app.inventario.ui.ui_view_inventario import Ui_MainWindow
-from app.inventario.inventario_controller import InventarioController
+from app.inventario.controlador_inventario import InventarioController
 from PySide6.QtCore import QDate
 
 
