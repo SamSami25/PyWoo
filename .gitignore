@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.cache/
+*.log
+
+# Entornos Virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Qt / PySide6
+*.qmlc
+*.jsc
+*.pyi
+
+# Configuraciones
+.env
+.env.*
+*.key
+*.pem
+
+# Reportes Generados
+*.xlsx
+*.csv
+reports/
+output/
+exports/
+
+# Local runtime data
+*.db
+*.sqlite3
+
+# Packaging
+*.spec
