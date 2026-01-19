@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../../assets/iconos.qrc">
+    <normaloff>:/icons/icons/inventario.png</normaloff>:/icons/icons/inventario.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QProgressBar" name="progressB_barra">
     <property name="geometry">
@@ -94,9 +98,9 @@ padding: 10px 12px;
     <property name="geometry">
      <rect>
       <x>169</x>
-      <y>390</y>
+      <y>380</y>
       <width>511</width>
-      <height>31</height>
+      <height>41</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -313,6 +317,8 @@ color: rgb(255, 255, 255);</string>
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../assets/iconos.qrc"/>
+ </resources>
  <connections/>
 </ui>

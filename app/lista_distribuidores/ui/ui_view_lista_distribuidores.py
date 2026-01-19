@@ -19,12 +19,16 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QDateTimeEdit, QLabel, QMainWindow,
     QMenu, QMenuBar, QProgressBar, QPushButton,
     QSizePolicy, QStatusBar, QTabWidget, QWidget)
+import iconos_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(700, 479)
+        icon = QIcon()
+        icon.addFile(u":/icons/icons/label_lista_distribuidores.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        MainWindow.setWindowIcon(icon)
         self.actionSistema = QAction(MainWindow)
         self.actionSistema.setObjectName(u"actionSistema")
         self.actionClaro = QAction(MainWindow)
@@ -85,7 +89,7 @@ class Ui_MainWindow(object):
 "padding: 6px 12px;")
         self.lb_blancocomentario = QLabel(self.centralwidget)
         self.lb_blancocomentario.setObjectName(u"lb_blancocomentario")
-        self.lb_blancocomentario.setGeometry(QRect(169, 390, 511, 31))
+        self.lb_blancocomentario.setGeometry(QRect(169, 378, 511, 51))
         self.lb_blancocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
 "border-radius: 9px;\n"
 "padding: 10px 12px;\n"

@@ -19,12 +19,16 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QDateTimeEdit, QLabel, QMainWindow,
     QMenu, QMenuBar, QPushButton, QSizePolicy,
     QStatusBar, QWidget)
+import iconos_rc
 
 class Ui_MainW_menu(object):
     def setupUi(self, MainW_menu):
         if not MainW_menu.objectName():
             MainW_menu.setObjectName(u"MainW_menu")
-        MainW_menu.resize(700, 479)
+        MainW_menu.resize(700, 480)
+        icon = QIcon()
+        icon.addFile(u":/icons/icons/label_reporte_ventas2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        MainW_menu.setWindowIcon(icon)
         self.actionSistema = QAction(MainW_menu)
         self.actionSistema.setObjectName(u"actionSistema")
         self.actionClaro = QAction(MainW_menu)
@@ -85,6 +89,10 @@ class Ui_MainW_menu(object):
 "font: 75 10pt \"Arial Black\";\n"
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
+        icon1 = QIcon()
+        icon1.addFile(u":/icons/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bt_reporteventas.setIcon(icon1)
+        self.bt_reporteventas.setIconSize(QSize(70, 70))
         self.lb_afondoblanco = QLabel(self.centralwidget)
         self.lb_afondoblanco.setObjectName(u"lb_afondoblanco")
         self.lb_afondoblanco.setGeometry(QRect(60, 280, 260, 151))
@@ -117,6 +125,10 @@ class Ui_MainW_menu(object):
 "font: 75 10pt \"Arial Black\";\n"
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
+        icon2 = QIcon()
+        icon2.addFile(u":/icons/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bt_actualizarproductos.setIcon(icon2)
+        self.bt_actualizarproductos.setIconSize(QSize(73, 73))
         self.bt_inventario = QPushButton(self.centralwidget)
         self.bt_inventario.setObjectName(u"bt_inventario")
         self.bt_inventario.setGeometry(QRect(390, 110, 241, 131))
@@ -125,6 +137,10 @@ class Ui_MainW_menu(object):
 "font: 75 10pt \"Arial Black\";\n"
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
+        icon3 = QIcon()
+        icon3.addFile(u":/icons/icons/inventario.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bt_inventario.setIcon(icon3)
+        self.bt_inventario.setIconSize(QSize(70, 70))
         self.bt_listadistribuidores = QPushButton(self.centralwidget)
         self.bt_listadistribuidores.setObjectName(u"bt_listadistribuidores")
         self.bt_listadistribuidores.setGeometry(QRect(390, 290, 241, 131))
@@ -133,6 +149,10 @@ class Ui_MainW_menu(object):
 "font: 75 10pt \"Arial Black\";\n"
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
+        icon4 = QIcon()
+        icon4.addFile(u":/icons/icons/distribuidores.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bt_listadistribuidores.setIcon(icon4)
+        self.bt_listadistribuidores.setIconSize(QSize(73, 73))
         self.lb_reporte_ventas = QLabel(self.centralwidget)
         self.lb_reporte_ventas.setObjectName(u"lb_reporte_ventas")
         self.lb_reporte_ventas.setGeometry(QRect(70, 210, 241, 31))

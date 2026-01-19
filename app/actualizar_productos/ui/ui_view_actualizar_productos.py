@@ -19,12 +19,16 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QDateTimeEdit, QLabel, QMainWindow,
     QMenu, QMenuBar, QProgressBar, QPushButton,
     QSizePolicy, QStatusBar, QTabWidget, QWidget)
+import iconos_rc
 
 class Ui_MainW_actualizarproductos(object):
     def setupUi(self, MainW_actualizarproductos):
         if not MainW_actualizarproductos.objectName():
             MainW_actualizarproductos.setObjectName(u"MainW_actualizarproductos")
         MainW_actualizarproductos.resize(700, 479)
+        icon = QIcon()
+        icon.addFile(u":/icons/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        MainW_actualizarproductos.setWindowIcon(icon)
         self.actionSistema = QAction(MainW_actualizarproductos)
         self.actionSistema.setObjectName(u"actionSistema")
         self.actionClaro = QAction(MainW_actualizarproductos)

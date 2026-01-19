@@ -17,12 +17,16 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit,
     QPushButton, QSizePolicy, QWidget)
+import iconos_rc
 
 class Ui_Dialog_urlWoocommerce(object):
     def setupUi(self, Dialog_urlWoocommerce):
         if not Dialog_urlWoocommerce.objectName():
             Dialog_urlWoocommerce.setObjectName(u"Dialog_urlWoocommerce")
         Dialog_urlWoocommerce.resize(552, 335)
+        icon = QIcon()
+        icon.addFile(u":/icons/icons/actualizar_productos2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        Dialog_urlWoocommerce.setWindowIcon(icon)
         Dialog_urlWoocommerce.setStyleSheet(u"")
         self.lb_nombre = QLabel(Dialog_urlWoocommerce)
         self.lb_nombre.setObjectName(u"lb_nombre")

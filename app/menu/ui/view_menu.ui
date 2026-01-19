@@ -7,11 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>479</height>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../../assets/iconos.qrc">
+    <normaloff>:/icons/icons/label_reporte_ventas2.png</normaloff>:/icons/icons/label_reporte_ventas2.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="lb_fecha">
@@ -124,6 +128,16 @@ padding: 6px 12px;</string>
     <property name="text">
      <string/>
     </property>
+    <property name="icon">
+     <iconset resource="../../../assets/iconos.qrc">
+      <normaloff>:/icons/icons/label_reporte_ventas.png</normaloff>:/icons/icons/label_reporte_ventas.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>70</width>
+      <height>70</height>
+     </size>
+    </property>
    </widget>
    <widget class="QLabel" name="lb_afondoblanco">
     <property name="geometry">
@@ -204,6 +218,16 @@ padding: 6px 12px;</string>
     <property name="text">
      <string/>
     </property>
+    <property name="icon">
+     <iconset resource="../../../assets/iconos.qrc">
+      <normaloff>:/icons/icons/actualizar_productos.png</normaloff>:/icons/icons/actualizar_productos.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>73</width>
+      <height>73</height>
+     </size>
+    </property>
    </widget>
    <widget class="QPushButton" name="bt_inventario">
     <property name="geometry">
@@ -224,6 +248,16 @@ padding: 6px 12px;</string>
     <property name="text">
      <string/>
     </property>
+    <property name="icon">
+     <iconset resource="../../../assets/iconos.qrc">
+      <normaloff>:/icons/icons/inventario.png</normaloff>:/icons/icons/inventario.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>70</width>
+      <height>70</height>
+     </size>
+    </property>
    </widget>
    <widget class="QPushButton" name="bt_listadistribuidores">
     <property name="geometry">
@@ -243,6 +277,16 @@ padding: 6px 12px;</string>
     </property>
     <property name="text">
      <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="../../../assets/iconos.qrc">
+      <normaloff>:/icons/icons/distribuidores.png</normaloff>:/icons/icons/distribuidores.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>73</width>
+      <height>73</height>
+     </size>
     </property>
    </widget>
    <widget class="QLabel" name="lb_reporte_ventas">
@@ -449,6 +493,8 @@ color: rgb(0, 0, 0);</string>
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../assets/iconos.qrc"/>
+ </resources>
  <connections/>
 </ui>

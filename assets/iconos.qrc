@@ -1,5 +1,16 @@
 <RCC>
-  <qresource prefix="reporte_ventas">
+  <qresource prefix="/icons">
     <file>icons/label_reporte_ventas.png</file>
+    <file>icons/reporte.png</file>
+    <file>icons/label_reporte_ventas2.png</file>
+    <file>icons/actualizar_productos.png</file>
+    <file>icons/actualizar_productos2.png</file>
+    <file>icons/actualizar.png</file>   
+    <file>icons/distribuidores.png</file>
+    <file>icons/exportar.png</file>
+    <file>icons/inventario.png</file>
+    <file>icons/label_lista_distribuidores.png</file>
+    <file>icons/label_lista_distribuidores2.png</file>
+    <file>icons/salir.png</file>
   </qresource>
 </RCC>

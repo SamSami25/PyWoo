@@ -1,5 +1,10 @@
 import sys
+import os
 from PySide6.QtWidgets import QApplication, QDialog
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
 from app.core.credenciales_view import VentanaCredenciales
 from app.menu.menu_view import MenuPrincipal

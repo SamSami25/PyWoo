@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../../assets/iconos.qrc">
+    <normaloff>:/icons/icons/actualizar_productos.png</normaloff>:/icons/icons/actualizar_productos.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QProgressBar" name="progressB_barra">
     <property name="geometry">
@@ -334,6 +338,8 @@ color: rgb(255, 255, 255);</string>
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../assets/iconos.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../assets/iconos.qrc">
-    <normaloff>:/reporte_ventas/icons/label_reporte_ventas.png</normaloff>:/reporte_ventas/icons/label_reporte_ventas.png</iconset>
+    <normaloff>:/icons/icons/label_reporte_ventas.png</normaloff>:/icons/icons/label_reporte_ventas.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="lb_reporteVentas">

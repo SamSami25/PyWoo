@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../../assets/iconos.qrc">
+    <normaloff>:/icons/icons/actualizar_productos2.png</normaloff>:/icons/icons/actualizar_productos2.png</iconset>
+  </property>
   <property name="styleSheet">
    <string notr="true"/>
   </property>
@@ -260,6 +264,8 @@ padding: 10px 12px;
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../assets/iconos.qrc"/>
+ </resources>
  <connections/>
 </ui>
