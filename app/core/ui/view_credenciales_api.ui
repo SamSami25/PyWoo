@@ -194,6 +194,9 @@ padding: 10px 12px;
    </property>
   </widget>
   <widget class="QLineEdit" name="lnEdit_cs">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -207,6 +210,9 @@ padding: 10px 12px;
      <family>Consolas</family>
      <pointsize>10</pointsize>
     </font>
+   </property>
+   <property name="echoMode">
+    <enum>QLineEdit::Password</enum>
    </property>
    <property name="placeholderText">
     <string>cs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</string>
@@ -229,6 +235,9 @@ padding: 10px 12px;
    </property>
   </widget>
   <widget class="QLineEdit" name="lnEdit_ck">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -242,6 +251,9 @@ padding: 10px 12px;
      <family>Consolas</family>
      <pointsize>10</pointsize>
     </font>
+   </property>
+   <property name="echoMode">
+    <enum>QLineEdit::Password</enum>
    </property>
    <property name="placeholderText">
     <string>ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</string>

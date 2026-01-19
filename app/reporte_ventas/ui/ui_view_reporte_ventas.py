@@ -78,10 +78,10 @@ class Ui_MainW_reporteVentas(object):
         self.dateE_Hasta.setObjectName(u"dateE_Hasta")
         self.dateE_Hasta.setGeometry(QRect(370, 110, 141, 22))
         self.dateE_Hasta.setStyleSheet(u"font: 9pt \"Consolas\";")
-        self.pbt_salir = QPushButton(self.centralwidget)
-        self.pbt_salir.setObjectName(u"pbt_salir")
-        self.pbt_salir.setGeometry(QRect(549, 90, 131, 51))
-        self.pbt_salir.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
+        self.pbt_generar_reporte = QPushButton(self.centralwidget)
+        self.pbt_generar_reporte.setObjectName(u"pbt_generar_reporte")
+        self.pbt_generar_reporte.setGeometry(QRect(529, 90, 151, 51))
+        self.pbt_generar_reporte.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
 "color: rgb(255, 255, 255);\n"
 "font: 75 10pt \"Arial Black\";\n"
 "border-radius: 8px;\n"
@@ -131,11 +131,14 @@ class Ui_MainW_reporteVentas(object):
         self.menuM_dulo.setObjectName(u"menuM_dulo")
         self.menuAyuda = QMenu(self.menubar)
         self.menuAyuda.setObjectName(u"menuAyuda")
+        self.menuCredenciales_API = QMenu(self.menubar)
+        self.menuCredenciales_API.setObjectName(u"menuCredenciales_API")
         MainW_reporteVentas.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainW_reporteVentas)
         self.statusbar.setObjectName(u"statusbar")
         MainW_reporteVentas.setStatusBar(self.statusbar)
 
+        self.menubar.addAction(self.menuCredenciales_API.menuAction())
         self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuM_dulo.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
@@ -170,7 +173,7 @@ class Ui_MainW_reporteVentas(object):
         self.lb_fondoblanco.setText("")
         self.lb_desde.setText(QCoreApplication.translate("MainW_reporteVentas", u"Desde:", None))
         self.lb_hasta.setText(QCoreApplication.translate("MainW_reporteVentas", u"Hasta:", None))
-        self.pbt_salir.setText(QCoreApplication.translate("MainW_reporteVentas", u"Exportar", None))
+        self.pbt_generar_reporte.setText(QCoreApplication.translate("MainW_reporteVentas", u"Generar Reporte", None))
         self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab), QCoreApplication.translate("MainW_reporteVentas", u"Tab 1", None))
         self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab_2), QCoreApplication.translate("MainW_reporteVentas", u"Tab 2", None))
         self.lb_blancocomentario.setText("")
@@ -179,5 +182,6 @@ class Ui_MainW_reporteVentas(object):
         self.menuHerramientas.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"Herramientas", None))
         self.menuM_dulo.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"M\u00f3dulos", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"Ayuda", None))
+        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"Credenciales API", None))
     # retranslateUi
 

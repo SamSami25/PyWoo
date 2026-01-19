@@ -1,60 +1,96 @@
-# app/actualizar_productos/actualizar_productos_view.py
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QTableWidgetItem
-from PySide6.QtCore import QDate
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QFileDialog
+from PySide6.QtCore import QDateTime
+from datetime import datetime
+
 from app.actualizar_productos.ui.ui_view_actualizar_productos import Ui_MainW_actualizarproductos
-from app.actualizar_productos.controlador_actualizar_productos import ActualizarProductosController
+from app.actualizar_productos.controlador_actualizar_productos import ControladorActualizarProductos
+from app.core.excepciones import PyWooError
 
 
 class ActualizarProductosView(QMainWindow):
-    def __init__(self):
-        super().__init__()
+    """
+    Vista del módulo Actualizar Productos.
+    """
 
-        # Cargar UI
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
         self.ui = Ui_MainW_actualizarproductos()
         self.ui.setupUi(self)
 
-        # Controlador
-        self.controller = ActualizarProductosController()
+        self.controlador = ControladorActualizarProductos()
 
-        # Inicializar estado
-        self._inicializar_ui()
+        self._configurar_ui()
         self._conectar_senales()
 
-    def _inicializar_ui(self):
-        self.ui.lb_fecha.setText(QDate.currentDate().toString("dd/MM/yyyy"))
+    # --------------------------------------------------
+    def _configurar_ui(self):
+        self.ui.progressB_barra.setValue(0)
+        self.ui.lb_fecha.setText(
+            datetime.now().strftime("%Y-%m-%d %H:%M")
+        )
+        self.ui.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
 
+    # --------------------------------------------------
     def _conectar_senales(self):
         self.ui.bt_subirArchivo.clicked.connect(self.subir_archivo)
         self.ui.bt_actualizar.clicked.connect(self.actualizar_productos)
-        self.ui.bt_exportar.clicked.connect(self.exportar)
+        self.ui.bt_exportar.clicked.connect(self.exportar_plantilla)
         self.ui.bt_volver.clicked.connect(self.close)
 
-    # ===== Métodos de la vista =====
-
-    def subir_archivo(self):
-        QMessageBox.information(
+    # --------------------------------------------------
+    def exportar_plantilla(self):
+        ruta, _ = QFileDialog.getSaveFileName(
             self,
-            "Archivo",
-            "Funcionalidad de carga de archivo pendiente"
+            "Exportar plantilla",
+            "plantilla_actualizar_productos.xlsx",
+            "Excel (*.xlsx)"
         )
+        if not ruta:
+            return
 
+        try:
+            self.controlador.exportar_plantilla(ruta)
+            QMessageBox.information(
+                self,
+                "Plantilla exportada",
+                "Plantilla Excel generada correctamente."
+            )
+        except PyWooError as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    # --------------------------------------------------
+    def subir_archivo(self):
+        ruta, _ = QFileDialog.getOpenFileName(
+            self,
+            "Seleccionar archivo",
+            "",
+            "Excel (*.xlsx)"
+        )
+        if not ruta:
+            return
+
+        try:
+            self.ui.progressB_barra.setValue(30)
+            self.controlador.cargar_archivo(ruta)
+            self.ui.lb_archivocomentario.setText("Archivo cargado correctamente")
+            self.ui.progressB_barra.setValue(60)
+        except PyWooError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            self.ui.progressB_barra.setValue(0)
+
+    # --------------------------------------------------
     def actualizar_productos(self):
-        productos = self.controller.obtener_productos()
-        self._cargar_tabla(productos)
-        QMessageBox.information(self, "Actualización", "Productos actualizados")
+        try:
+            self.ui.progressB_barra.setValue(70)
+            self.controlador.actualizar_productos()
+            self.ui.progressB_barra.setValue(100)
 
-    def exportar(self):
-        self.controller.exportar_productos()
-        QMessageBox.information(self, "Exportar", "Datos exportados")
-
-    def _cargar_tabla(self, productos):
-        self.ui.tb_productos.clear()
-        self.ui.tb_productos.setRowCount(len(productos))
-
-        for fila, p in enumerate(productos):
-            self.ui.tb_productos.setItem(
-                fila, 0, QTableWidgetItem(str(p["id"]))
+            QMessageBox.information(
+                self,
+                "Actualización completada",
+                "Productos actualizados correctamente."
             )
-            self.ui.tb_productos.setItem(
-                fila, 1, QTableWidgetItem(p["name"])
-            )
+        except PyWooError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            self.ui.progressB_barra.setValue(0)

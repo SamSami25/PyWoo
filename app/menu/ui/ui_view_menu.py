@@ -186,11 +186,14 @@ class Ui_MainW_menu(object):
         self.menuM_dulos.setObjectName(u"menuM_dulos")
         self.menuAyuda = QMenu(self.menubar)
         self.menuAyuda.setObjectName(u"menuAyuda")
+        self.menuCredenciales_API = QMenu(self.menubar)
+        self.menuCredenciales_API.setObjectName(u"menuCredenciales_API")
         MainW_menu.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainW_menu)
         self.statusbar.setObjectName(u"statusbar")
         MainW_menu.setStatusBar(self.statusbar)
 
+        self.menubar.addAction(self.menuCredenciales_API.menuAction())
         self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuM_dulos.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
@@ -237,5 +240,6 @@ class Ui_MainW_menu(object):
         self.menuHerramientas.setTitle(QCoreApplication.translate("MainW_menu", u"Herramientas", None))
         self.menuM_dulos.setTitle(QCoreApplication.translate("MainW_menu", u"M\u00f3dulos", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MainW_menu", u"Ayuda", None))
+        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_menu", u"Credenciales API", None))
     # retranslateUi
 

@@ -1,23 +1,28 @@
-# app/core/configuracion.py
 import os
-from dotenv import set_key, load_dotenv
+from dotenv import load_dotenv, set_key
+from app.core.excepciones import ConfiguracionError
 
 ENV_PATH = ".env"
 
-load_dotenv()
 
-def guardar_configuracion(url, consumer_key, consumer_secret):
-    set_key(ENV_PATH, "WOO_BASE_URL", url)
-    set_key(ENV_PATH, "CONSUMER_KEY", consumer_key)
-    set_key(ENV_PATH, "CONSUMER_SECRET", consumer_secret)
+class Configuracion:
+    def __init__(self):
+        load_dotenv(ENV_PATH)
 
-def cargar_configuracion():
-    return {
-        "WOO_BASE_URL": os.getenv("WOO_BASE_URL"),
-        "CONSUMER_KEY": os.getenv("CONSUMER_KEY"),
-        "CONSUMER_SECRET": os.getenv("CONSUMER_SECRET"),
-    }
+    def obtener_credenciales(self):
+        url = os.getenv("WC_URL")
+        ck = os.getenv("WC_KEY")
+        cs = os.getenv("WC_SECRET")
 
-def configuracion_completa():
-    cfg = cargar_configuracion()
-    return all(cfg.values())
+        if not all([url, ck, cs]):
+            raise ConfiguracionError("Credenciales incompletas")
+
+        return url, ck, cs
+
+    def guardar_credenciales(self, url, ck, cs):
+        if not url or not ck or not cs:
+            raise ConfiguracionError("No se permiten credenciales vacías")
+
+        set_key(ENV_PATH, "WC_URL", url)
+        set_key(ENV_PATH, "WC_KEY", ck)
+        set_key(ENV_PATH, "WC_SECRET", cs)

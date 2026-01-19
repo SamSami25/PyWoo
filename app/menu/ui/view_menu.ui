@@ -391,6 +391,12 @@ color: rgb(0, 0, 0);</string>
     </property>
     <addaction name="actionAcerca_de"/>
    </widget>
+   <widget class="QMenu" name="menuCredenciales_API">
+    <property name="title">
+     <string>Credenciales API</string>
+    </property>
+   </widget>
+   <addaction name="menuCredenciales_API"/>
    <addaction name="menuHerramientas"/>
    <addaction name="menuM_dulos"/>
    <addaction name="menuAyuda"/>

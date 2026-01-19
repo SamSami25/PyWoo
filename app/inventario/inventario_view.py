@@ -1,59 +1,72 @@
-from PySide6.QtWidgets import QMainWindow, QTableWidgetItem
-from app.inventario.ui.ui_view_inventario import Ui_MainWindow
-from app.inventario.controlador_inventario import InventarioController
+from PySide6.QtWidgets import QMainWindow, QMessageBox
 from PySide6.QtCore import QDate
+from datetime import datetime
+
+from app.inventario.ui.ui_view_inventario import Ui_MainWindow
+from app.inventario.controlador_inventario import ControladorInventario
+from app.core.excepciones import PyWooError
 
 
 class InventarioView(QMainWindow):
-    def __init__(self):
-        super().__init__()
+    """
+    Vista del módulo Inventario.
+    """
 
-        # Cargar UI
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # Controlador
-        self.controller = InventarioController()
+        self.controlador = ControladorInventario()
 
-        # Inicializar estado
-        self._inicializar_ui()
+        self._configurar_ui()
         self._conectar_senales()
 
-    def _inicializar_ui(self):
-        self.ui.lb_fecha.setText(QDate.currentDate().toString("dd/MM/yyyy"))
+    # --------------------------------------------------
+    def _configurar_ui(self):
+        self.ui.progressB_barra.setValue(0)
+        self.ui.lb_fecha.setText(
+            datetime.now().strftime("%Y-%m-%d %H:%M")
+        )
 
+        # Default
+        self.ui.checkB_todos.setChecked(True)
+
+    # --------------------------------------------------
     def _conectar_senales(self):
-        self.ui.pbt_exportar.clicked.connect(self.exportar)
+        self.ui.pbt_exportar.clicked.connect(self.exportar_inventario)
         self.ui.bt_volver.clicked.connect(self.close)
-        self.ui.checkB_todos.clicked.connect(self.cargar_todos)
-        self.ui.checkB_con.clicked.connect(self.cargar_con_stock)
-        self.ui.checkB_sin.clicked.connect(self.cargar_sin_stock)
 
-    # ====== MÉTODOS DE VISTA ======
+    # --------------------------------------------------
+    def _obtener_filtro(self):
+        if self.ui.checkB_con.isChecked():
+            return "con_stock"
+        if self.ui.checkB_sin.isChecked():
+            return "sin_stock"
+        return "todos"
 
-    def cargar_todos(self):
-        productos = self.controller.obtener_todos()
-        self._cargar_tabla(productos)
+    # --------------------------------------------------
+    def exportar_inventario(self):
+        try:
+            self.ui.progressB_barra.setValue(20)
 
-    def cargar_con_stock(self):
-        productos = self.controller.obtener_con_stock()
-        self._cargar_tabla(productos)
+            filtro = self._obtener_filtro()
+            self.controlador.obtener_productos(filtro)
 
-    def cargar_sin_stock(self):
-        productos = self.controller.obtener_sin_stock()
-        self._cargar_tabla(productos)
+            self.ui.progressB_barra.setValue(70)
 
-    def _cargar_tabla(self, productos):
-        self.ui.tb_productos.clear()
-        self.ui.tb_productos.setRowCount(len(productos))
+            nombre_archivo = f"inventario_{filtro}.xlsx"
+            self.controlador.exportar_excel(nombre_archivo)
 
-        for fila, producto in enumerate(productos):
-            self.ui.tb_productos.setItem(fila, 0, QTableWidgetItem(str(producto["id"])))
-            self.ui.tb_productos.setItem(fila, 1, QTableWidgetItem(producto["name"]))
-            self.ui.tb_productos.setItem(
-                fila, 2,
-                QTableWidgetItem(str(producto.get("stock_quantity", 0)))
+            self.ui.progressB_barra.setValue(100)
+
+            QMessageBox.information(
+                self,
+                "Inventario exportado",
+                f"Archivo generado correctamente:\n{nombre_archivo}"
             )
 
-    def exportar(self):
-        self.controller.exportar_inventario()
+        except PyWooError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            self.ui.progressB_barra.setValue(0)
