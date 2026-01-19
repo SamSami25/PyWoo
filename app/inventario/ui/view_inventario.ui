@@ -210,7 +210,7 @@ padding: 6px 12px;</string>
     </property>
     <property name="styleSheet">
      <string notr="true">font: 9pt &quot;Consolas&quot;;
-color: rgb(0, 0, 0);</string>
+color: rgb(255, 255, 255);</string>
     </property>
     <property name="text">
      <string/>
@@ -253,10 +253,12 @@ color: rgb(0, 0, 0);</string>
     <property name="title">
      <string>Credenciales API</string>
     </property>
+    <addaction name="actionWooCommerce"/>
+    <addaction name="actionCredenciales_API"/>
    </widget>
    <addaction name="menuCredenciales_API"/>
-   <addaction name="menuHerramientas"/>
    <addaction name="menuM_dulos"/>
+   <addaction name="menuHerramientas"/>
    <addaction name="menuAyuda"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -298,6 +300,16 @@ color: rgb(0, 0, 0);</string>
   <action name="actionAcerca_de">
    <property name="text">
     <string>Acerca de</string>
+   </property>
+  </action>
+  <action name="actionWooCommerce">
+   <property name="text">
+    <string>WooCommerce</string>
+   </property>
+  </action>
+  <action name="actionCredenciales_API">
+   <property name="text">
+    <string>Credenciales API</string>
    </property>
   </action>
  </widget>

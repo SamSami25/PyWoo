@@ -108,10 +108,10 @@ padding: 10px 12px;
    <widget class="QPushButton" name="bt_reporteventas">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>70</x>
       <y>110</y>
-      <width>161</width>
-      <height>91</height>
+      <width>241</width>
+      <height>131</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -188,10 +188,10 @@ padding: 10px 12px;
    <widget class="QPushButton" name="bt_actualizarproductos">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>70</x>
       <y>290</y>
-      <width>161</width>
-      <height>91</height>
+      <width>241</width>
+      <height>131</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -208,10 +208,10 @@ padding: 6px 12px;</string>
    <widget class="QPushButton" name="bt_inventario">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>390</x>
       <y>110</y>
-      <width>161</width>
-      <height>91</height>
+      <width>241</width>
+      <height>131</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -228,10 +228,10 @@ padding: 6px 12px;</string>
    <widget class="QPushButton" name="bt_listadistribuidores">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>390</x>
       <y>290</y>
-      <width>161</width>
-      <height>91</height>
+      <width>241</width>
+      <height>131</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -393,12 +393,13 @@ color: rgb(0, 0, 0);</string>
    </widget>
    <widget class="QMenu" name="menuCredenciales_API">
     <property name="title">
-     <string>Credenciales API</string>
+     <string>Woocomerce</string>
     </property>
+    <addaction name="actionCredenciales_API"/>
    </widget>
    <addaction name="menuCredenciales_API"/>
-   <addaction name="menuHerramientas"/>
    <addaction name="menuM_dulos"/>
+   <addaction name="menuHerramientas"/>
    <addaction name="menuAyuda"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -440,6 +441,11 @@ color: rgb(0, 0, 0);</string>
   <action name="actionAcerca_de">
    <property name="text">
     <string>Acerca de</string>
+   </property>
+  </action>
+  <action name="actionCredenciales_API">
+   <property name="text">
+    <string>Credenciales API</string>
    </property>
   </action>
  </widget>

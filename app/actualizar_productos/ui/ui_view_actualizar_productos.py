@@ -41,6 +41,8 @@ class Ui_MainW_actualizarproductos(object):
         self.actionLista_de_Distribuidores.setObjectName(u"actionLista_de_Distribuidores")
         self.actionAcerca_de = QAction(MainW_actualizarproductos)
         self.actionAcerca_de.setObjectName(u"actionAcerca_de")
+        self.actionCredenciales_API = QAction(MainW_actualizarproductos)
+        self.actionCredenciales_API.setObjectName(u"actionCredenciales_API")
         self.centralwidget = QWidget(MainW_actualizarproductos)
         self.centralwidget.setObjectName(u"centralwidget")
         self.progressB_barra = QProgressBar(self.centralwidget)
@@ -61,7 +63,7 @@ class Ui_MainW_actualizarproductos(object):
 "padding: 6px 12px;")
         self.lb_blancocomentario = QLabel(self.centralwidget)
         self.lb_blancocomentario.setObjectName(u"lb_blancocomentario")
-        self.lb_blancocomentario.setGeometry(QRect(169, 390, 511, 31))
+        self.lb_blancocomentario.setGeometry(QRect(169, 380, 511, 51))
         self.lb_blancocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
 "border-radius: 9px;\n"
 "padding: 10px 12px;\n"
@@ -132,7 +134,7 @@ class Ui_MainW_actualizarproductos(object):
         self.lb_fecha.setObjectName(u"lb_fecha")
         self.lb_fecha.setGeometry(QRect(530, 30, 141, 22))
         self.lb_fecha.setStyleSheet(u"font: 9pt \"Consolas\";\n"
-"color: rgb(0, 0, 0);")
+"color: rgb(255, 255, 255);")
         MainW_actualizarproductos.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainW_actualizarproductos)
         self.menubar.setObjectName(u"menubar")
@@ -151,8 +153,8 @@ class Ui_MainW_actualizarproductos(object):
         MainW_actualizarproductos.setStatusBar(self.statusbar)
 
         self.menubar.addAction(self.menuCredenciales_API.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuM_dulos.menuAction())
+        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
         self.menuHerramientas.addAction(self.actionSistema)
         self.menuHerramientas.addAction(self.actionClaro)
@@ -162,6 +164,7 @@ class Ui_MainW_actualizarproductos(object):
         self.menuM_dulos.addAction(self.actionActualizaci_n_de_Productos)
         self.menuM_dulos.addAction(self.actionLista_de_Distribuidores)
         self.menuAyuda.addAction(self.actionAcerca_de)
+        self.menuCredenciales_API.addAction(self.actionCredenciales_API)
 
         self.retranslateUi(MainW_actualizarproductos)
 
@@ -178,6 +181,7 @@ class Ui_MainW_actualizarproductos(object):
         self.actionActualizaci_n_de_Productos.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizaci\u00f3n de Productos", None))
         self.actionLista_de_Distribuidores.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Lista de Distribuidores", None))
         self.actionAcerca_de.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Acerca de", None))
+        self.actionCredenciales_API.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Credenciales API", None))
         self.bt_volver.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Volver al Men\u00fa", None))
         self.lb_blancocomentario.setText("")
         self.lb_actualizar.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizar Productos", None))
@@ -192,6 +196,6 @@ class Ui_MainW_actualizarproductos(object):
         self.menuHerramientas.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Herramientas", None))
         self.menuM_dulos.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"M\u00f3dulos", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Ayuda", None))
-        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Credenciales API", None))
+        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"WooCommerce", None))
     # retranslateUi
 

@@ -41,6 +41,8 @@ class Ui_MainWindow(object):
         self.actionLista_de_Distribuidores.setObjectName(u"actionLista_de_Distribuidores")
         self.actionAcerca_de = QAction(MainWindow)
         self.actionAcerca_de.setObjectName(u"actionAcerca_de")
+        self.actionCredenciales_API = QAction(MainWindow)
+        self.actionCredenciales_API.setObjectName(u"actionCredenciales_API")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.dateTimeEdit = QDateTimeEdit(self.centralwidget)
@@ -119,7 +121,7 @@ class Ui_MainWindow(object):
         self.lb_fecha_2.setObjectName(u"lb_fecha_2")
         self.lb_fecha_2.setGeometry(QRect(530, 30, 141, 22))
         self.lb_fecha_2.setStyleSheet(u"font: 9pt \"Consolas\";\n"
-"color: rgb(0, 0, 0);")
+"color: rgb(255, 255, 255);")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
@@ -138,8 +140,8 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.menubar.addAction(self.menuCredenciales_API.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuM_dulos.menuAction())
+        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
         self.menuHerramientas.addAction(self.actionSistema)
         self.menuHerramientas.addAction(self.actionClaro)
@@ -149,8 +151,12 @@ class Ui_MainWindow(object):
         self.menuM_dulos.addAction(self.actionActualizar_Productos)
         self.menuM_dulos.addAction(self.actionLista_de_Distribuidores)
         self.menuAyuda.addAction(self.actionAcerca_de)
+        self.menuCredenciales_API.addAction(self.actionCredenciales_API)
 
         self.retranslateUi(MainWindow)
+
+        self.tb_productos.setCurrentIndex(0)
+
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -165,19 +171,20 @@ class Ui_MainWindow(object):
         self.actionActualizar_Productos.setText(QCoreApplication.translate("MainWindow", u"Actualizar Productos", None))
         self.actionLista_de_Distribuidores.setText(QCoreApplication.translate("MainWindow", u"Lista de Distribuidores", None))
         self.actionAcerca_de.setText(QCoreApplication.translate("MainWindow", u"Acerca de", None))
+        self.actionCredenciales_API.setText(QCoreApplication.translate("MainWindow", u"Credenciales API", None))
         self.lb_fecha.setText("")
         self.lb_distribuidores.setText(QCoreApplication.translate("MainWindow", u"Lista de Distribuidores", None))
         self.lb_fondoblanco.setText("")
         self.bt_volver.setText(QCoreApplication.translate("MainWindow", u"Volver al Men\u00fa", None))
         self.lb_blancocomentario.setText("")
         self.bt_exportar.setText(QCoreApplication.translate("MainWindow", u"Exportar", None))
-        self.bt_generar.setText(QCoreApplication.translate("MainWindow", u"Generar Lista", None))
+        self.bt_generar.setText(QCoreApplication.translate("MainWindow", u"Generar", None))
         self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Tab 1", None))
         self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Tab 2", None))
         self.lb_fecha_2.setText("")
         self.menuHerramientas.setTitle(QCoreApplication.translate("MainWindow", u"Herramientas", None))
         self.menuM_dulos.setTitle(QCoreApplication.translate("MainWindow", u"M\u00f3dulos", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MainWindow", u"Ayuda", None))
-        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainWindow", u"Credenciales API", None))
+        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainWindow", u"WooCommerce", None))
     # retranslateUi
 

@@ -19,12 +19,16 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QDateEdit, QLabel, QMainWindow,
     QMenu, QMenuBar, QProgressBar, QPushButton,
     QSizePolicy, QStatusBar, QTabWidget, QWidget)
+import iconos_rc
 
 class Ui_MainW_reporteVentas(object):
     def setupUi(self, MainW_reporteVentas):
         if not MainW_reporteVentas.objectName():
             MainW_reporteVentas.setObjectName(u"MainW_reporteVentas")
         MainW_reporteVentas.resize(700, 479)
+        icon = QIcon()
+        icon.addFile(u":/reporte_ventas/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        MainW_reporteVentas.setWindowIcon(icon)
         self.actionSistema = QAction(MainW_reporteVentas)
         self.actionSistema.setObjectName(u"actionSistema")
         self.actionClaro = QAction(MainW_reporteVentas)
@@ -41,6 +45,8 @@ class Ui_MainW_reporteVentas(object):
         self.actionLista_de_Distribuidores.setObjectName(u"actionLista_de_Distribuidores")
         self.actionAcerca_de = QAction(MainW_reporteVentas)
         self.actionAcerca_de.setObjectName(u"actionAcerca_de")
+        self.actionCredenciales_API = QAction(MainW_reporteVentas)
+        self.actionCredenciales_API.setObjectName(u"actionCredenciales_API")
         self.centralwidget = QWidget(MainW_reporteVentas)
         self.centralwidget.setObjectName(u"centralwidget")
         self.lb_reporteVentas = QLabel(self.centralwidget)
@@ -102,7 +108,7 @@ class Ui_MainW_reporteVentas(object):
         self.tb_productos.addTab(self.tab_2, "")
         self.lb_blancocomentario = QLabel(self.centralwidget)
         self.lb_blancocomentario.setObjectName(u"lb_blancocomentario")
-        self.lb_blancocomentario.setGeometry(QRect(169, 390, 511, 31))
+        self.lb_blancocomentario.setGeometry(QRect(169, 378, 511, 51))
         self.lb_blancocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
 "border-radius: 9px;\n"
 "padding: 10px 12px;\n"
@@ -120,7 +126,7 @@ class Ui_MainW_reporteVentas(object):
         self.lb_fecha.setObjectName(u"lb_fecha")
         self.lb_fecha.setGeometry(QRect(530, 30, 141, 22))
         self.lb_fecha.setStyleSheet(u"font: 9pt \"Consolas\";\n"
-"color: rgb(0, 0, 0);")
+"color: rgb(255, 255, 255);")
         MainW_reporteVentas.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainW_reporteVentas)
         self.menubar.setObjectName(u"menubar")
@@ -139,8 +145,8 @@ class Ui_MainW_reporteVentas(object):
         MainW_reporteVentas.setStatusBar(self.statusbar)
 
         self.menubar.addAction(self.menuCredenciales_API.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuM_dulo.menuAction())
+        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
         self.menuHerramientas.addAction(self.actionSistema)
         self.menuHerramientas.addAction(self.actionClaro)
@@ -150,6 +156,7 @@ class Ui_MainW_reporteVentas(object):
         self.menuM_dulo.addAction(self.actionActualizar_Productos)
         self.menuM_dulo.addAction(self.actionLista_de_Distribuidores)
         self.menuAyuda.addAction(self.actionAcerca_de)
+        self.menuCredenciales_API.addAction(self.actionCredenciales_API)
 
         self.retranslateUi(MainW_reporteVentas)
 
@@ -169,6 +176,7 @@ class Ui_MainW_reporteVentas(object):
         self.actionActualizar_Productos.setText(QCoreApplication.translate("MainW_reporteVentas", u"Actualizar Productos", None))
         self.actionLista_de_Distribuidores.setText(QCoreApplication.translate("MainW_reporteVentas", u"Lista de Distribuidores", None))
         self.actionAcerca_de.setText(QCoreApplication.translate("MainW_reporteVentas", u"Acerca de", None))
+        self.actionCredenciales_API.setText(QCoreApplication.translate("MainW_reporteVentas", u"Credenciales API", None))
         self.lb_reporteVentas.setText(QCoreApplication.translate("MainW_reporteVentas", u"Reporte Ventas", None))
         self.lb_fondoblanco.setText("")
         self.lb_desde.setText(QCoreApplication.translate("MainW_reporteVentas", u"Desde:", None))
@@ -182,6 +190,6 @@ class Ui_MainW_reporteVentas(object):
         self.menuHerramientas.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"Herramientas", None))
         self.menuM_dulo.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"M\u00f3dulos", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"Ayuda", None))
-        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"Credenciales API", None))
+        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_reporteVentas", u"WooCommerce", None))
     # retranslateUi
 

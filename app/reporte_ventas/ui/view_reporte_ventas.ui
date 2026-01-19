@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../../assets/iconos.qrc">
+    <normaloff>:/reporte_ventas/icons/label_reporte_ventas.png</normaloff>:/reporte_ventas/icons/label_reporte_ventas.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="lb_reporteVentas">
     <property name="geometry">
@@ -182,9 +186,9 @@ padding: 6px 12px;</string>
     <property name="geometry">
      <rect>
       <x>169</x>
-      <y>390</y>
+      <y>378</y>
       <width>511</width>
-      <height>31</height>
+      <height>51</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -229,7 +233,7 @@ padding: 6px 12px;</string>
     </property>
     <property name="styleSheet">
      <string notr="true">font: 9pt &quot;Consolas&quot;;
-color: rgb(0, 0, 0);</string>
+color: rgb(255, 255, 255);</string>
     </property>
     <property name="text">
      <string/>
@@ -270,12 +274,13 @@ color: rgb(0, 0, 0);</string>
    </widget>
    <widget class="QMenu" name="menuCredenciales_API">
     <property name="title">
-     <string>Credenciales API</string>
+     <string>WooCommerce</string>
     </property>
+    <addaction name="actionCredenciales_API"/>
    </widget>
    <addaction name="menuCredenciales_API"/>
-   <addaction name="menuHerramientas"/>
    <addaction name="menuM_dulo"/>
+   <addaction name="menuHerramientas"/>
    <addaction name="menuAyuda"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -319,7 +324,14 @@ color: rgb(0, 0, 0);</string>
     <string>Acerca de</string>
    </property>
   </action>
+  <action name="actionCredenciales_API">
+   <property name="text">
+    <string>Credenciales API</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../assets/iconos.qrc"/>
+ </resources>
  <connections/>
 </ui>

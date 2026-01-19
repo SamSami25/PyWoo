@@ -41,6 +41,8 @@ class Ui_MainW_menu(object):
         self.actionLista_de_Dsitribuidores.setObjectName(u"actionLista_de_Dsitribuidores")
         self.actionAcerca_de = QAction(MainW_menu)
         self.actionAcerca_de.setObjectName(u"actionAcerca_de")
+        self.actionCredenciales_API = QAction(MainW_menu)
+        self.actionCredenciales_API.setObjectName(u"actionCredenciales_API")
         self.centralwidget = QWidget(MainW_menu)
         self.centralwidget.setObjectName(u"centralwidget")
         self.lb_fecha = QLabel(self.centralwidget)
@@ -77,7 +79,7 @@ class Ui_MainW_menu(object):
 "")
         self.bt_reporteventas = QPushButton(self.centralwidget)
         self.bt_reporteventas.setObjectName(u"bt_reporteventas")
-        self.bt_reporteventas.setGeometry(QRect(110, 110, 161, 91))
+        self.bt_reporteventas.setGeometry(QRect(70, 110, 241, 131))
         self.bt_reporteventas.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
 "color: rgb(255, 255, 255);\n"
 "font: 75 10pt \"Arial Black\";\n"
@@ -109,7 +111,7 @@ class Ui_MainW_menu(object):
 "")
         self.bt_actualizarproductos = QPushButton(self.centralwidget)
         self.bt_actualizarproductos.setObjectName(u"bt_actualizarproductos")
-        self.bt_actualizarproductos.setGeometry(QRect(110, 290, 161, 91))
+        self.bt_actualizarproductos.setGeometry(QRect(70, 290, 241, 131))
         self.bt_actualizarproductos.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
 "color: rgb(255, 255, 255);\n"
 "font: 75 10pt \"Arial Black\";\n"
@@ -117,7 +119,7 @@ class Ui_MainW_menu(object):
 "padding: 6px 12px;")
         self.bt_inventario = QPushButton(self.centralwidget)
         self.bt_inventario.setObjectName(u"bt_inventario")
-        self.bt_inventario.setGeometry(QRect(430, 110, 161, 91))
+        self.bt_inventario.setGeometry(QRect(390, 110, 241, 131))
         self.bt_inventario.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
 "color: rgb(255, 255, 255);\n"
 "font: 75 10pt \"Arial Black\";\n"
@@ -125,7 +127,7 @@ class Ui_MainW_menu(object):
 "padding: 6px 12px;")
         self.bt_listadistribuidores = QPushButton(self.centralwidget)
         self.bt_listadistribuidores.setObjectName(u"bt_listadistribuidores")
-        self.bt_listadistribuidores.setGeometry(QRect(430, 290, 161, 91))
+        self.bt_listadistribuidores.setGeometry(QRect(390, 290, 241, 131))
         self.bt_listadistribuidores.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
 "color: rgb(255, 255, 255);\n"
 "font: 75 10pt \"Arial Black\";\n"
@@ -194,8 +196,8 @@ class Ui_MainW_menu(object):
         MainW_menu.setStatusBar(self.statusbar)
 
         self.menubar.addAction(self.menuCredenciales_API.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuM_dulos.menuAction())
+        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
         self.menuHerramientas.addAction(self.actionSistema)
         self.menuHerramientas.addAction(self.actionClaro)
@@ -205,6 +207,7 @@ class Ui_MainW_menu(object):
         self.menuM_dulos.addAction(self.actionActualizar_Productos)
         self.menuM_dulos.addAction(self.actionLista_de_Dsitribuidores)
         self.menuAyuda.addAction(self.actionAcerca_de)
+        self.menuCredenciales_API.addAction(self.actionCredenciales_API)
 
         self.retranslateUi(MainW_menu)
 
@@ -221,6 +224,7 @@ class Ui_MainW_menu(object):
         self.actionActualizar_Productos.setText(QCoreApplication.translate("MainW_menu", u"Actualizar Productos", None))
         self.actionLista_de_Dsitribuidores.setText(QCoreApplication.translate("MainW_menu", u"Lista de Dsitribuidores", None))
         self.actionAcerca_de.setText(QCoreApplication.translate("MainW_menu", u"Acerca de", None))
+        self.actionCredenciales_API.setText(QCoreApplication.translate("MainW_menu", u"Credenciales API", None))
         self.lb_fecha.setText("")
         self.lb_fecha_2.setText("")
         self.lb_menu.setText(QCoreApplication.translate("MainW_menu", u"Men\u00fa", None))
@@ -240,6 +244,6 @@ class Ui_MainW_menu(object):
         self.menuHerramientas.setTitle(QCoreApplication.translate("MainW_menu", u"Herramientas", None))
         self.menuM_dulos.setTitle(QCoreApplication.translate("MainW_menu", u"M\u00f3dulos", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MainW_menu", u"Ayuda", None))
-        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_menu", u"Credenciales API", None))
+        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_menu", u"Woocomerce", None))
     # retranslateUi
 

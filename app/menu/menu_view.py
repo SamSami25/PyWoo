@@ -5,8 +5,8 @@ from app.reporte_ventas.reporte_ventas_view import ReporteVentasView
 from app.inventario.inventario_view import InventarioView
 from app.actualizar_productos.actualizar_productos_view import ActualizarProductosView
 from app.lista_distribuidores.lista_distribuidores_view import ListaDistribuidoresView
-
-
+from app.core.credenciales_view import VentanaCredenciales
+from app.core.dialogos import DialogoCredencialesWoo
 
 class MenuPrincipal(QMainWindow):
     def __init__(self):
@@ -26,6 +26,10 @@ class MenuPrincipal(QMainWindow):
         self.ui.bt_actualizarproductos.clicked.connect(self.abrir_actualizar_productos)
         self.ui.bt_reporteventas.clicked.connect(self.abrir_reporte_ventas)
         self.ui.bt_listadistribuidores.clicked.connect(self.abrir_distribuidores)
+
+
+        self.ui.actionCredenciales_API.triggered.connect(self.abrir_credenciales)
+
         self.ui.actionReporte_Ventas.triggered.connect(self.abrir_reporte_ventas)
         self.ui.actionInventario.triggered.connect(self.abrir_inventario)
         self.ui.actionActualizar_Productos.triggered.connect(self.abrir_actualizar_productos)
@@ -49,5 +53,8 @@ class MenuPrincipal(QMainWindow):
         self.distribuidores = ListaDistribuidoresView()
         self.distribuidores.show()
 
+    def abrir_credenciales(self):
+        dlg = DialogoCredencialesWoo(self)
+        dlg.exec()
 
 

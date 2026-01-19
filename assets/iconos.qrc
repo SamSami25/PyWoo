@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="reporte_ventas">
+    <file>icons/label_reporte_ventas.png</file>
+  </qresource>
+</RCC>
