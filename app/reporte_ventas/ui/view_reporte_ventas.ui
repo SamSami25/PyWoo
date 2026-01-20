@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Reporte Ventas</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../assets/iconos.qrc">
-    <normaloff>:/icons/icons/label_reporte_ventas.png</normaloff>:/icons/icons/label_reporte_ventas.png</iconset>
+   <iconset resource="../../../iconos.qrc">
+    <normaloff>:/assets/icons/label_reporte_ventas.png</normaloff>:/assets/icons/label_reporte_ventas.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="lb_reporteVentas">
@@ -331,7 +331,7 @@ color: rgb(255, 255, 255);</string>
   </action>
  </widget>
  <resources>
-  <include location="../../../assets/iconos.qrc"/>
+  <include location="../../../iconos.qrc"/>
  </resources>
  <connections/>
 </ui>

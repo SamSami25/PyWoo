@@ -11,6 +11,7 @@ from app.core.excepciones import PyWooError
 class ControladorActualizarProductos:
     """
     Controlador del módulo Actualizar Productos.
+    Actualiza precios de venta desde Excel o CSV usando SKU.
     """
 
     HEADERS_VALIDOS = ["SKU", "PRECIO_VENTA"]
@@ -19,6 +20,8 @@ class ControladorActualizarProductos:
         self.config = Configuracion()
         self._cliente = None
         self._productos_archivo = []
+        self._simples = []
+        self._variados = []
 
     # --------------------------------------------------
     def _inicializar_cliente(self):
@@ -52,11 +55,11 @@ class ControladorActualizarProductos:
             raise PyWooError("Archivo Excel inválido")
 
         encabezado = [str(c.value).strip().upper() for c in ws[1][:2]]
-
         if encabezado != self.HEADERS_VALIDOS:
             raise PyWooError("Encabezado Incorrecto")
 
         productos = []
+
         for fila in ws.iter_rows(min_row=2, values_only=True):
             sku, precio = fila[:2]
 
@@ -64,7 +67,7 @@ class ControladorActualizarProductos:
                 continue
 
             productos.append({
-                "sku": str(sku),
+                "sku": str(sku).strip(),
                 "price": float(precio),
                 "estado": "Sin Actualizar"
             })
@@ -76,15 +79,15 @@ class ControladorActualizarProductos:
         try:
             with open(ruta, newline="", encoding="utf-8") as f:
                 reader = csv.reader(f)
-                encabezado = next(reader)
+                encabezado = [h.strip().upper() for h in next(reader)[:2]]
         except Exception:
             raise PyWooError("Archivo CSV inválido")
 
-        encabezado = [h.strip().upper() for h in encabezado[:2]]
         if encabezado != self.HEADERS_VALIDOS:
             raise PyWooError("Encabezado Incorrecto")
 
         productos = []
+
         with open(ruta, newline="", encoding="utf-8") as f:
             reader = csv.reader(f)
             next(reader)
@@ -94,8 +97,12 @@ class ControladorActualizarProductos:
                     continue
 
                 sku, precio = row[:2]
+
+                if not sku or precio is None:
+                    continue
+
                 productos.append({
-                    "sku": sku,
+                    "sku": str(sku).strip(),
                     "price": float(precio),
                     "estado": "Sin Actualizar"
                 })
@@ -103,7 +110,10 @@ class ControladorActualizarProductos:
         return productos
 
     # --------------------------------------------------
-    def actualizar_productos(self):
+    def actualizar_productos(self, callback_progreso=None):
+        """
+        Actualiza productos en WooCommerce y separa simples / variados
+        """
         if not self._productos_archivo:
             raise PyWooError("No hay productos cargados")
 
@@ -111,22 +121,30 @@ class ControladorActualizarProductos:
 
         productos_tienda = self._cliente.obtener_productos(per_page=100)
 
-        mapa_productos = {
-            p.get("sku"): p.get("id")
+        # Mapa SKU → producto Woo
+        mapa = {
+            p.get("sku"): p
             for p in productos_tienda
             if p.get("sku")
         }
 
-        for p in self._productos_archivo:
+        self._simples.clear()
+        self._variados.clear()
+
+        total = len(self._productos_archivo)
+
+        for i, p in enumerate(self._productos_archivo, start=1):
             sku = p["sku"]
-            if sku not in mapa_productos:
+
+            if sku not in mapa:
                 p["estado"] = "Sin Actualizar"
                 continue
 
-            producto_id = mapa_productos[sku]
+            producto = mapa[sku]
 
+            # Actualizar en WooCommerce
             self._cliente.actualizar_producto(
-                producto_id=producto_id,
+                producto_id=producto["id"],
                 data={
                     "regular_price": str(p["price"]),
                     "manage_stock": True
@@ -134,6 +152,25 @@ class ControladorActualizarProductos:
             )
 
             p["estado"] = "Actualizado"
+
+            fila = {
+                "sku": sku,
+                "name": producto.get("name", ""),
+                "stock_quantity": producto.get("stock_quantity", 0),
+                "precio_compra": "",
+                "price": p["price"],
+                "estado": p["estado"]
+            }
+
+            if producto.get("type") == "variable":
+                self._variados.append(fila)
+            else:
+                self._simples.append(fila)
+
+            if callback_progreso:
+                callback_progreso(i, total)
+
+        return self._simples, self._variados
 
     # --------------------------------------------------
     def exportar_resultado(self, ruta):
@@ -144,10 +181,7 @@ class ControladorActualizarProductos:
         ws = wb.active
         ws.title = "Resultado Actualización"
 
-        headers = [
-            "SKU", "PRECIO VENTA", "ESTADO"
-        ]
-        ws.append(headers)
+        ws.append(["SKU", "PRECIO VENTA", "ESTADO"])
 
         for p in self._productos_archivo:
             ws.append([

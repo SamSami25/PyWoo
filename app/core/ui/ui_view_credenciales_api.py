@@ -25,7 +25,7 @@ class Ui_Dialog_urlWoocommerce(object):
             Dialog_urlWoocommerce.setObjectName(u"Dialog_urlWoocommerce")
         Dialog_urlWoocommerce.resize(552, 335)
         icon = QIcon()
-        icon.addFile(u":/icons/icons/actualizar_productos2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/assets/icons/actualizar.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         Dialog_urlWoocommerce.setWindowIcon(icon)
         Dialog_urlWoocommerce.setStyleSheet(u"")
         self.lb_nombre = QLabel(Dialog_urlWoocommerce)
@@ -116,7 +116,7 @@ class Ui_Dialog_urlWoocommerce(object):
     # setupUi
 
     def retranslateUi(self, Dialog_urlWoocommerce):
-        Dialog_urlWoocommerce.setWindowTitle(QCoreApplication.translate("Dialog_urlWoocommerce", u"Dialog", None))
+        Dialog_urlWoocommerce.setWindowTitle(QCoreApplication.translate("Dialog_urlWoocommerce", u"Credenciales API WooCommerce", None))
         self.lb_nombre.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Credenciales API WooCommerce", None))
         self.lb_fondoblanco.setText("")
         self.pbt_guardar.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Guardar", None))

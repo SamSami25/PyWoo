@@ -24,6 +24,9 @@ class ReporteVentasView(QMainWindow):
 
         self.ui = Ui_MainW_reporteVentas()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
+        self.setMinimumSize(self.size())
+        self.setMaximumSize(self.size())
 
         self.controlador = ControladorReporteVentas()
 

@@ -27,7 +27,7 @@ class Ui_MainW_reporteVentas(object):
             MainW_reporteVentas.setObjectName(u"MainW_reporteVentas")
         MainW_reporteVentas.resize(700, 479)
         icon = QIcon()
-        icon.addFile(u":/icons/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/assets/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainW_reporteVentas.setWindowIcon(icon)
         self.actionSistema = QAction(MainW_reporteVentas)
         self.actionSistema.setObjectName(u"actionSistema")
@@ -167,7 +167,7 @@ class Ui_MainW_reporteVentas(object):
     # setupUi
 
     def retranslateUi(self, MainW_reporteVentas):
-        MainW_reporteVentas.setWindowTitle(QCoreApplication.translate("MainW_reporteVentas", u"MainWindow", None))
+        MainW_reporteVentas.setWindowTitle(QCoreApplication.translate("MainW_reporteVentas", u"Reporte Ventas", None))
         self.actionSistema.setText(QCoreApplication.translate("MainW_reporteVentas", u"Sistema", None))
         self.actionClaro.setText(QCoreApplication.translate("MainW_reporteVentas", u"Claro", None))
         self.actionOscuro.setText(QCoreApplication.translate("MainW_reporteVentas", u"Oscuro", None))

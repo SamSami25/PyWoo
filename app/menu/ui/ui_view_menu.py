@@ -27,7 +27,7 @@ class Ui_MainW_menu(object):
             MainW_menu.setObjectName(u"MainW_menu")
         MainW_menu.resize(700, 480)
         icon = QIcon()
-        icon.addFile(u":/icons/icons/label_reporte_ventas2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/assets/icons/label_reporte_ventas2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainW_menu.setWindowIcon(icon)
         self.actionSistema = QAction(MainW_menu)
         self.actionSistema.setObjectName(u"actionSistema")
@@ -90,7 +90,7 @@ class Ui_MainW_menu(object):
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
         icon1 = QIcon()
-        icon1.addFile(u":/icons/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon1.addFile(u":/assets/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.bt_reporteventas.setIcon(icon1)
         self.bt_reporteventas.setIconSize(QSize(70, 70))
         self.lb_afondoblanco = QLabel(self.centralwidget)
@@ -126,7 +126,7 @@ class Ui_MainW_menu(object):
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
         icon2 = QIcon()
-        icon2.addFile(u":/icons/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon2.addFile(u":/assets/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.bt_actualizarproductos.setIcon(icon2)
         self.bt_actualizarproductos.setIconSize(QSize(73, 73))
         self.bt_inventario = QPushButton(self.centralwidget)
@@ -138,7 +138,7 @@ class Ui_MainW_menu(object):
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
         icon3 = QIcon()
-        icon3.addFile(u":/icons/icons/inventario.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon3.addFile(u":/assets/icons/inventario.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.bt_inventario.setIcon(icon3)
         self.bt_inventario.setIconSize(QSize(70, 70))
         self.bt_listadistribuidores = QPushButton(self.centralwidget)
@@ -150,7 +150,7 @@ class Ui_MainW_menu(object):
 "border-radius: 8px;\n"
 "padding: 6px 12px;")
         icon4 = QIcon()
-        icon4.addFile(u":/icons/icons/distribuidores.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon4.addFile(u":/assets/icons/distribuidores.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.bt_listadistribuidores.setIcon(icon4)
         self.bt_listadistribuidores.setIconSize(QSize(73, 73))
         self.lb_reporte_ventas = QLabel(self.centralwidget)
@@ -235,7 +235,7 @@ class Ui_MainW_menu(object):
     # setupUi
 
     def retranslateUi(self, MainW_menu):
-        MainW_menu.setWindowTitle(QCoreApplication.translate("MainW_menu", u"MainWindow", None))
+        MainW_menu.setWindowTitle(QCoreApplication.translate("MainW_menu", u"Men\u00fa PyWoo", None))
         self.actionSistema.setText(QCoreApplication.translate("MainW_menu", u"Sistema", None))
         self.actionClaro.setText(QCoreApplication.translate("MainW_menu", u"Claro", None))
         self.actionOscuro.setText(QCoreApplication.translate("MainW_menu", u"Oscuro", None))

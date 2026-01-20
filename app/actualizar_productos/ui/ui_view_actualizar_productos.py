@@ -27,7 +27,7 @@ class Ui_MainW_actualizarproductos(object):
             MainW_actualizarproductos.setObjectName(u"MainW_actualizarproductos")
         MainW_actualizarproductos.resize(700, 479)
         icon = QIcon()
-        icon.addFile(u":/icons/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/assets/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainW_actualizarproductos.setWindowIcon(icon)
         self.actionSistema = QAction(MainW_actualizarproductos)
         self.actionSistema.setObjectName(u"actionSistema")
@@ -176,7 +176,7 @@ class Ui_MainW_actualizarproductos(object):
     # setupUi
 
     def retranslateUi(self, MainW_actualizarproductos):
-        MainW_actualizarproductos.setWindowTitle(QCoreApplication.translate("MainW_actualizarproductos", u"MainWindow", None))
+        MainW_actualizarproductos.setWindowTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizar Productos", None))
         self.actionSistema.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Sistema", None))
         self.actionClaro.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Claro", None))
         self.actionOscuro.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Oscuro", None))

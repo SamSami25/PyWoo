@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(700, 479)
         icon = QIcon()
-        icon.addFile(u":/icons/icons/inventario.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/assets/icons/inventario.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
         self.actionSistema = QAction(MainWindow)
         self.actionSistema.setObjectName(u"actionSistema")
@@ -161,7 +161,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Inventario", None))
         self.actionSistema.setText(QCoreApplication.translate("MainWindow", u"Sistema", None))
         self.actionClaro.setText(QCoreApplication.translate("MainWindow", u"Claro", None))
         self.actionOscuro.setText(QCoreApplication.translate("MainWindow", u"Oscuro", None))

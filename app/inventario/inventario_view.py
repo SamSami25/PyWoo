@@ -18,6 +18,9 @@ class InventarioView(QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
+        self.setMinimumSize(self.size())
+        self.setMaximumSize(self.size())
 
         self.controlador = ControladorInventario()
         self.HEADERS = self.controlador.HEADERS

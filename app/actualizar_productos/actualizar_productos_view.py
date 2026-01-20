@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QMainWindow, QMessageBox, QFileDialog, QTableWidget, QTableWidgetItem)
-from PySide6.QtCore import QDateTime
+from PySide6.QtCore import QDateTime, Qt
 from PySide6.QtGui import QFont
 from datetime import datetime
 import os
@@ -15,18 +15,27 @@ class ActualizarProductosView(QMainWindow):
     """
 
     HEADERS = [
-        "SKU", "NOMBRE DEL PRODUCTO", "STOCK",
-        "PRECIO COMPRA", "PRECIO VENTA", "ESTADO"
+        "SKU",
+        "NOMBRE DEL PRODUCTO",
+        "STOCK",
+        "PRECIO COMPRA",
+        "PRECIO VENTA",
+        "ESTADO"
     ]
+
+    EDITABLES = {"STOCK", "PRECIO COMPRA", "PRECIO VENTA"}
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self.ui = Ui_MainW_actualizarproductos()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
+        self.setMinimumSize(self.size())
+        self.setMaximumSize(self.size())
 
         self.controlador = ControladorActualizarProductos()
-        self._archivo_cargado = None
+        self._productos_cargados = None
 
         self._configurar_ui()
         self._configurar_tablas()
@@ -37,9 +46,7 @@ class ActualizarProductosView(QMainWindow):
         self.ui.progressB_barra.setValue(0)
         self.ui.lb_archivocomentario.setText("")
         self.ui.lb_blancocomentario.setText("")
-        self.ui.lb_fecha.setText(
-            datetime.now().strftime("%Y-%m-%d %H:%M")
-        )
+        self.ui.lb_fecha.setText(datetime.now().strftime("%Y-%m-%d %H:%M"))
         self.ui.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
 
     # --------------------------------------------------
@@ -53,14 +60,15 @@ class ActualizarProductosView(QMainWindow):
         for tabla in (self.tabla_simples, self.tabla_variados):
             tabla.setColumnCount(len(self.HEADERS))
             tabla.setHorizontalHeaderLabels(self.HEADERS)
+            tabla.horizontalHeader().setStretchLastSection(True)
+
+            for i, header in enumerate(self.HEADERS):
+                item = tabla.horizontalHeaderItem(i)
+                item.setFont(font)
+
             tabla.setEditTriggers(QTableWidget.DoubleClicked)
 
-            for i in range(len(self.HEADERS)):
-                tabla.horizontalHeaderItem(i).setFont(font)
-
-        self.ui.tb_productos.removeTab(0)
-        self.ui.tb_productos.removeTab(0)
-
+        self.ui.tb_productos.clear()
         self.ui.tb_productos.addTab(self.tabla_simples, "Productos Simples")
         self.ui.tb_productos.addTab(self.tabla_variados, "Productos Variados")
 
@@ -89,26 +97,57 @@ class ActualizarProductosView(QMainWindow):
             return
 
         try:
-            self.ui.progressB_barra.setValue(30)
-            productos = self.controlador.cargar_archivo(ruta)
+            self.ui.progressB_barra.setValue(20)
+            self._productos_cargados = self.controlador.cargar_archivo(ruta)
 
-            self._archivo_cargado = productos
-            self._cargar_tabla(productos)
+            self.tabla_simples.setRowCount(0)
+            self.tabla_variados.setRowCount(0)
 
             self.ui.lb_archivocomentario.setText("Cargado Correctamente")
-            self.ui.progressB_barra.setValue(60)
+            self.ui.progressB_barra.setValue(40)
 
         except PyWooError as e:
             self.ui.lb_archivocomentario.setText(str(e))
             self.ui.progressB_barra.setValue(0)
 
     # --------------------------------------------------
-    def _cargar_tabla(self, productos):
-        self.tabla_simples.setRowCount(0)
-        self.tabla_variados.setRowCount(0)
+    def actualizar_productos(self):
+        if not self._productos_cargados:
+            QMessageBox.warning(self, "Atención", "Debe cargar un archivo primero")
+            return
+
+        try:
+            self.ui.lb_blancocomentario.setText("Actualizando productos...")
+            self.ui.progressB_barra.setValue(50)
+
+            def progreso(actual, total):
+                if total > 0:
+                    valor = 50 + int((actual / total) * 40)
+                    self.ui.progressB_barra.setValue(valor)
+
+            simples, variados = self.controlador.actualizar_productos(progreso)
+
+            self._cargar_tabla(self.tabla_simples, simples)
+            self._cargar_tabla(self.tabla_variados, variados)
+
+            self.ui.progressB_barra.setValue(100)
+            self.ui.lb_blancocomentario.setText("Actualizando con Éxito")
+
+            QMessageBox.information(
+                self,
+                "Proceso completado",
+                "Productos actualizados correctamente"
+            )
+
+        except PyWooError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            self.ui.progressB_barra.setValue(0)
+
+    # --------------------------------------------------
+    def _cargar_tabla(self, tabla, productos):
+        tabla.setRowCount(0)
 
         for p in productos:
-            tabla = self.tabla_simples
             fila = tabla.rowCount()
             tabla.insertRow(fila)
 
@@ -123,30 +162,12 @@ class ActualizarProductosView(QMainWindow):
 
             for col, valor in enumerate(datos):
                 item = QTableWidgetItem(str(valor))
+
+                header = self.HEADERS[col]
+                if header not in self.EDITABLES:
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
                 tabla.setItem(fila, col, item)
-
-    # --------------------------------------------------
-    def actualizar_productos(self):
-        if not self._archivo_cargado:
-            QMessageBox.warning(self, "Atención", "Debe cargar un archivo primero")
-            return
-
-        try:
-            self.ui.progressB_barra.setValue(70)
-            self.controlador.actualizar_productos()
-            self.ui.progressB_barra.setValue(100)
-
-            self.ui.lb_blancocomentario.setText("Actualizando con Éxito")
-
-            QMessageBox.information(
-                self,
-                "Proceso completado",
-                "Productos actualizados correctamente"
-            )
-
-        except PyWooError as e:
-            QMessageBox.critical(self, "Error", str(e))
-            self.ui.progressB_barra.setValue(0)
 
     # --------------------------------------------------
     def exportar_excel(self):

@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="/">
+    <file>assets/icons/label_reporte_ventas.png</file>
+    <file>assets/icons/reporte.png</file>
+    <file>assets/icons/label_reporte_ventas2.png</file>
+    <file>assets/icons/actualizar_productos.png</file>
+    <file>assets/icons/actualizar_productos2.png</file>
+    <file>assets/icons/actualizar.png</file>
+    <file>assets/icons/distribuidores.png</file>
+    <file>assets/icons/exportar.png</file>
+    <file>assets/icons/inventario.png</file>
+    <file>assets/icons/label_lista_distribuidores.png</file>
+    <file>assets/icons/label_lista_distribuidores2.png</file>
+    <file>assets/icons/salir.png</file>
+  </qresource>
+</RCC>

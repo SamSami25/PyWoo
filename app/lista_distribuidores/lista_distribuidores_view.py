@@ -1,4 +1,9 @@
-from PySide6.QtWidgets import (QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem,)
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QMessageBox,
+    QTableWidget,
+    QTableWidgetItem
+)
 from PySide6.QtCore import QDateTime
 from PySide6.QtGui import QFont
 from datetime import datetime
@@ -18,6 +23,9 @@ class ListaDistribuidoresView(QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
+        self.setMinimumSize(self.size())
+        self.setMaximumSize(self.size())
 
         self.controlador = ControladorListaDistribuidores()
 
@@ -25,7 +33,9 @@ class ListaDistribuidoresView(QMainWindow):
         self._configurar_tablas()
         self._conectar_senales()
 
-    # --------------------------------------------------
+    # ==================================================
+    # CONFIGURACIÓN INICIAL
+    # ==================================================
     def _configurar_ui(self):
         self.ui.progressB_barra.setValue(0)
         self.ui.lb_blancocomentario.setText("")
@@ -34,7 +44,9 @@ class ListaDistribuidoresView(QMainWindow):
         )
         self.ui.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
 
-    # --------------------------------------------------
+    # ==================================================
+    # TABLAS
+    # ==================================================
     def _configurar_tablas(self):
         """
         Configura las dos pestañas del QTabWidget con QTableWidget reales
@@ -51,31 +63,38 @@ class ListaDistribuidoresView(QMainWindow):
             tabla.setColumnCount(len(headers))
             tabla.setHorizontalHeaderLabels(headers)
             tabla.setEditTriggers(QTableWidget.NoEditTriggers)
+            tabla.setAlternatingRowColors(True)
 
             for i in range(len(headers)):
                 tabla.horizontalHeaderItem(i).setFont(font)
 
-        # Limpiar tabs generados por Qt Designer
+            tabla.resizeColumnsToContents()
+
+        # Limpiar tabs creados por Qt Designer
         self.ui.tb_productos.clear()
 
         self.ui.tb_productos.addTab(self.tabla_simples, "Productos Simples")
         self.ui.tb_productos.addTab(self.tabla_variados, "Productos Variados")
 
-    # --------------------------------------------------
+    # ==================================================
+    # SEÑALES
+    # ==================================================
     def _conectar_senales(self):
         self.ui.bt_generar.clicked.connect(self.generar_lista)
         self.ui.bt_exportar.clicked.connect(self.exportar_lista)
         self.ui.bt_volver.clicked.connect(self.close)
 
-    # --------------------------------------------------
+    # ==================================================
+    # LÓGICA PRINCIPAL
+    # ==================================================
     def generar_lista(self):
         try:
             self.ui.lb_blancocomentario.setText("Generando lista de distribuidores...")
-            self.ui.progressB_barra.setValue(10)
+            self.ui.progressB_barra.setValue(5)
 
             def progreso(actual, total):
                 if total > 0:
-                    valor = int((actual / total) * 80)
+                    valor = int((actual / total) * 90)
                     self.ui.progressB_barra.setValue(valor)
 
             simples, variados = self.controlador.generar_lista(progreso)
@@ -91,11 +110,10 @@ class ListaDistribuidoresView(QMainWindow):
             self.ui.lb_blancocomentario.setText("Error al generar la lista")
             self.ui.progressB_barra.setValue(0)
 
-    # --------------------------------------------------
-    def _cargar_tabla(self, tabla, datos):
-        """
-        Carga los datos en la tabla correspondiente
-        """
+    # ==================================================
+    # CARGA DE DATOS EN TABLA
+    # ==================================================
+    def _cargar_tabla(self, tabla: QTableWidget, datos: list):
         tabla.setRowCount(0)
         headers = self.controlador.HEADERS_TABLA
 
@@ -103,11 +121,15 @@ class ListaDistribuidoresView(QMainWindow):
             row = tabla.rowCount()
             tabla.insertRow(row)
 
-            for col, h in enumerate(headers):
-                valor = fila.get(h, "")
+            for col, header in enumerate(headers):
+                valor = fila.get(header, "")
                 tabla.setItem(row, col, QTableWidgetItem(str(valor)))
 
-    # --------------------------------------------------
+        tabla.resizeColumnsToContents()
+
+    # ==================================================
+    # EXPORTAR
+    # ==================================================
     def exportar_lista(self):
         try:
             self.ui.progressB_barra.setValue(90)

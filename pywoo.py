@@ -1,5 +1,6 @@
 import sys
 import os
+import iconos_rc
 from PySide6.QtWidgets import QApplication, QDialog
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

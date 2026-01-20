@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Lista de Distribuidores</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../assets/iconos.qrc">
-    <normaloff>:/icons/icons/label_lista_distribuidores.png</normaloff>:/icons/icons/label_lista_distribuidores.png</iconset>
+   <iconset resource="../../../iconos.qrc">
+    <normaloff>:/assets/icons/distribuidores.png</normaloff>:/assets/icons/distribuidores.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QDateTimeEdit" name="dateTimeEdit">
@@ -317,7 +317,7 @@ color: rgb(255, 255, 255);</string>
   </action>
  </widget>
  <resources>
-  <include location="../../../assets/iconos.qrc"/>
+  <include location="../../../iconos.qrc"/>
  </resources>
  <connections/>
 </ui>

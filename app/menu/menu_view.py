@@ -14,6 +14,9 @@ class MenuPrincipal(QMainWindow):
 
         self.ui = Ui_MainW_menu()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
+        self.setMinimumSize(self.size())
+        self.setMaximumSize(self.size())
 
         self._inicializar_ui()
         self._conectar_senales()
