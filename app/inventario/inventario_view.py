@@ -1,179 +1,201 @@
-from PySide6.QtWidgets import (QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
-from datetime import datetime
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QHeaderView
+from PySide6.QtCore import Qt, QThread
 
-from app.inventario.ui.ui_view_inventario import Ui_MainWindow
+from app.inventario.ui.ui_view_inventario import Ui_Inventario
 from app.inventario.controlador_inventario import ControladorInventario
-from app.core.excepciones import PyWooError
+from app.inventario.worker_inventario import WorkerInventario
+
+from app.core.proceso import ProcessDialog
+from app.core.dialogos import mostrar_error, mostrar_info
 
 
 class InventarioView(QMainWindow):
-    """
-    Vista del módulo Inventario.
-    """
-
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.ui = Ui_MainWindow()
+        self.ui = Ui_Inventario()
         self.ui.setupUi(self)
-        self.setFixedSize(self.size())
-        self.setMinimumSize(self.size())
-        self.setMaximumSize(self.size())
 
         self.controlador = ControladorInventario()
-        self.HEADERS = self.controlador.HEADERS
 
-        self.tabla_simples = None
-        self.tabla_variados = None
-
-        self._configurar_ui()
-        self._conectar_senales()
-
-    # --------------------------------------------------
-    def _configurar_ui(self):
-        self.ui.progressB_barra.setValue(0)
-        self.ui.lb_fecha.setText(
-            datetime.now().strftime("%d/%m/%Y %H:%M")
-        )
-        self.ui.lb_blancocomentario.setText("")
-
-        # Solo uno activo por defecto
-        self.ui.checkB_todos.setChecked(True)
-        self.ui.checkB_con.setChecked(False)
-        self.ui.checkB_sin.setChecked(False)
+        self.thread = None
+        self.worker = None
+        self.dialogo = None
+        self._generado = False
 
         self._configurar_tablas()
+        self._configurar_checks()
+        self._configurar_estado()
+        self._conectar()
 
-    # --------------------------------------------------
-    def _conectar_senales(self):
-        self.ui.checkB_todos.clicked.connect(
-            lambda: self._activar_check("todos")
+    # -------------------------------------------------
+    # CONFIGURACIÓN
+    # -------------------------------------------------
+    def _configurar_tablas(self):
+        for tabla in (self.ui.tableSimples, self.ui.tableVariados):
+            header = tabla.horizontalHeader()
+            header.setSectionResizeMode(QHeaderView.ResizeToContents)
+            header.setStretchLastSection(True)
+
+    def _configurar_checks(self):
+        checks = (
+            self.ui.checkTodos,
+            self.ui.checkSinStock,
+            self.ui.checkConStock,
         )
-        self.ui.checkB_con.clicked.connect(
-            lambda: self._activar_check("con")
+
+        for chk in checks:
+            chk.toggled.connect(
+                lambda checked, c=chk: self._exclusivo(c, checked)
+            )
+
+        self.ui.checkTodos.setChecked(True)
+
+    def _configurar_estado(self):
+        self.ui.btnExportar.setEnabled(False)
+        self.ui.labelEstado.setText("")
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
+
+    # -------------------------------------------------
+    # CHECKBOXES EXCLUSIVOS
+    # -------------------------------------------------
+    def _exclusivo(self, activo, checked):
+        if not checked:
+            return
+
+        for chk in (
+            self.ui.checkTodos,
+            self.ui.checkSinStock,
+            self.ui.checkConStock,
+        ):
+            if chk is not activo:
+                chk.blockSignals(True)
+                chk.setChecked(False)
+                chk.blockSignals(False)
+
+    # -------------------------------------------------
+    # CONEXIONES
+    # -------------------------------------------------
+    def _conectar(self):
+        self.ui.btnGenerar.clicked.connect(self._generar)
+        self.ui.btnExportar.clicked.connect(self._exportar)
+        self.ui.btnVolver.clicked.connect(self._cerrar)
+
+    # -------------------------------------------------
+    # CONTROL DE HILO
+    # -------------------------------------------------
+    def _detener_hilo(self):
+        if self.thread and self.thread.isRunning():
+            self.thread.quit()
+            self.thread.wait()
+
+        self.thread = None
+        self.worker = None
+
+    def closeEvent(self, event):
+        self._detener_hilo()
+        event.accept()
+
+    def _cerrar(self):
+        self._detener_hilo()
+        self.close()
+
+    # -------------------------------------------------
+    # GENERAR INVENTARIO (ASYNC)
+    # -------------------------------------------------
+    def _generar(self):
+        self._detener_hilo()
+
+        filtro = self._obtener_filtro()
+        self._limpiar_tablas()
+        self.ui.btnExportar.setEnabled(False)
+        self._generado = False
+
+        self.dialogo = ProcessDialog(self)
+        self.dialogo.ui.lblTitulo.setText("Generando Inventario")
+        self.dialogo.reset()
+        self.dialogo.set_mensaje("Generando inventario...")
+        self.dialogo.show()
+
+        self.thread = QThread(self)
+        self.worker = WorkerInventario(self.controlador, filtro)
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.ejecutar)
+        self.worker.progreso.connect(self._actualizar_progreso)
+        self.worker.terminado.connect(self._finalizar)
+        self.worker.error.connect(self._error)
+
+        self.worker.terminado.connect(self.thread.quit)
+        self.worker.terminado.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+    def _actualizar_progreso(self, valor, mensaje):
+        self.ui.progressBar.setValue(valor)
+        self.ui.lblProcesando.setText(mensaje)
+
+        if self.dialogo:
+            self.dialogo.set_progreso(valor)
+            self.dialogo.set_mensaje(mensaje)
+
+    def _finalizar(self, modelo_simples, modelo_variados):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+
+        self.ui.tableSimples.setModel(modelo_simples)
+        self.ui.tableVariados.setModel(modelo_variados)
+
+        self.ui.labelEstado.setText("Inventario generado correctamente")
+        self.ui.btnExportar.setEnabled(True)
+        self._generado = True
+
+        mostrar_info("Inventario generado correctamente.")
+
+    def _error(self, mensaje):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+        mostrar_error(mensaje)
+
+    # -------------------------------------------------
+    # EXPORTAR
+    # -------------------------------------------------
+    def _exportar(self):
+        if not self._generado:
+            mostrar_error("Debe generar el inventario primero.")
+            return
+
+        ruta, _ = QFileDialog.getSaveFileName(
+            self,
+            "Exportar inventario",
+            "inventario.xlsx",
+            "Excel (*.xlsx)"
         )
-        self.ui.checkB_sin.clicked.connect(
-            lambda: self._activar_check("sin")
-        )
 
-        self.ui.pbt_exportar.clicked.connect(self.exportar_inventario)
-        self.ui.bt_volver.clicked.connect(self.close)
+        if ruta:
+            try:
+                self.controlador.exportar_excel(ruta)
+                mostrar_info("Archivo exportado correctamente.")
+            except Exception as e:
+                mostrar_error(str(e))
 
-    # --------------------------------------------------
-    def _activar_check(self, tipo):
-        """
-        Garantiza que solo un checkbox esté activo.
-        """
-        self.ui.checkB_todos.setChecked(tipo == "todos")
-        self.ui.checkB_con.setChecked(tipo == "con")
-        self.ui.checkB_sin.setChecked(tipo == "sin")
-
-        self.cargar_inventario()
-
-    # --------------------------------------------------
+    # -------------------------------------------------
+    # UTILIDADES
+    # -------------------------------------------------
     def _obtener_filtro(self):
-        if self.ui.checkB_con.isChecked():
-            return "con_stock"
-        if self.ui.checkB_sin.isChecked():
+        if self.ui.checkSinStock.isChecked():
             return "sin_stock"
+        if self.ui.checkConStock.isChecked():
+            return "con_stock"
         return "todos"
 
-    # --------------------------------------------------
-    def _configurar_tablas(self):
-        """
-        Configura las dos pestañas del QTabWidget con tablas
-        """
-        self.tabla_simples = QTableWidget()
-        self.tabla_variados = QTableWidget()
-
-        for tabla in (self.tabla_simples, self.tabla_variados):
-            tabla.setColumnCount(len(self.HEADERS))
-            tabla.setHorizontalHeaderLabels(self.HEADERS)
-            tabla.setEditTriggers(QTableWidget.NoEditTriggers)
-            tabla.horizontalHeader().setStretchLastSection(True)
-
-            font = QFont()
-            font.setBold(True)
-            for i in range(len(self.HEADERS)):
-                tabla.horizontalHeaderItem(i).setFont(font)
-
-        # Limpiar tabs existentes
-        while self.ui.tb_productos.count():
-            self.ui.tb_productos.removeTab(0)
-
-        # Agregar tabs reales
-        self.ui.tb_productos.addTab(
-            self.tabla_simples, "Productos Simples"
-        )
-        self.ui.tb_productos.addTab(
-            self.tabla_variados, "Productos Variados"
-        )
-
-    # --------------------------------------------------
-    def cargar_inventario(self):
-        try:
-            self.ui.progressB_barra.setValue(10)
-            self.ui.lb_blancocomentario.setText("Cargando inventario...")
-
-            productos = self.controlador.obtener_productos(
-                self._obtener_filtro()
-            )
-
-            self._llenar_tablas(productos)
-
-            self.ui.progressB_barra.setValue(100)
-            self.ui.lb_blancocomentario.setText("Se generó con éxito.")
-
-        except PyWooError as e:
-            QMessageBox.critical(self, "Error", str(e))
-            self.ui.progressB_barra.setValue(0)
-
-    # --------------------------------------------------
-    def _llenar_tablas(self, productos):
-        self.tabla_simples.setRowCount(0)
-        self.tabla_variados.setRowCount(0)
-
-        for p in productos:
-            tabla = (
-                self.tabla_simples
-                if p.get("type") == "simple"
-                else self.tabla_variados
-            )
-
-            fila = tabla.rowCount()
-            tabla.insertRow(fila)
-
-            categorias = ", ".join(
-                c.get("name", "") for c in p.get("categories", [])
-            )
-
-            valores = [
-                p.get("sku", ""),
-                p.get("name", ""),
-                categorias,
-                str(p.get("stock_quantity", 0)),
-                p.get("price", ""),
-                p.get("stock_status", "")
-            ]
-
-            for col, valor in enumerate(valores):
-                item = QTableWidgetItem(valor)
-                item.setTextAlignment(Qt.AlignCenter)
-                tabla.setItem(fila, col, item)
-
-    # --------------------------------------------------
-    def exportar_inventario(self):
-        try:
-            nombre = f"inventario_{self._obtener_filtro()}.xlsx"
-            self.controlador.exportar_excel(nombre)
-
-            QMessageBox.information(
-                self,
-                "Inventario exportado",
-                f"Archivo generado correctamente:\n{nombre}"
-            )
-
-        except PyWooError as e:
-            QMessageBox.critical(self, "Error", str(e))
+    def _limpiar_tablas(self):
+        self.ui.tableSimples.setModel(None)
+        self.ui.tableVariados.setModel(None)
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
+        self.ui.labelEstado.setText("")

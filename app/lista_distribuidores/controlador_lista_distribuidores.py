@@ -1,180 +1,194 @@
-from app.core.configuracion import Configuracion
+from PySide6.QtCore import QAbstractTableModel, Qt
+from PySide6.QtGui import QFont
+import xlsxwriter
+
 from app.core.cliente_woocommerce import ClienteWooCommerce
-from app.core.excepciones import PyWooError
-from openpyxl import Workbook
+from app.menu.menu_view import MenuPrincipalView
 
 
-# ==========================================================
-# FUNCIONES DE NEGOCIO
-# ==========================================================
-def validar_precio(precio) -> float:
-    try:
-        return round(float(precio), 4)
-    except Exception:
-        return 0.0
+HEADERS_INTERNAL = [
+    "SKU",
+    "NOMBRE DEL PRODUCTO",
+    "VARIACIÓN",
+    "STOCK",
+    "PVP",
+    "PRECIO COMPRA",
+    "GANANCIA",
+    "DESCUENTO (%)",
+    "DESCUENTO ($)",
+    "PVD",
+    "OBSERVACIÓN",
+    "URL",
+]
 
 
-def por_descuento(ganancia: float) -> float:
-    """
-    Regla de negocio para descuento en función de la ganancia (0..1)
-    """
-    if ganancia <= 0.1:
-        return 0.0
-    elif ganancia <= 0.6:
-        return round(0.4 * ganancia - 0.04, 4)
-    return 0.20
+# -------------------------------------------------
+# MODELO TABLA
+# -------------------------------------------------
+class ModeloTablaDistribuidores(QAbstractTableModel):
+    def __init__(self, datos):
+        super().__init__()
+        self._datos = datos
+
+    def rowCount(self, parent=None):
+        return len(self._datos)
+
+    def columnCount(self, parent=None):
+        return len(HEADERS_INTERNAL)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        if role == Qt.DisplayRole:
+            return self._datos[index.row()][index.column()]
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal:
+            if role == Qt.DisplayRole:
+                return HEADERS_INTERNAL[section]
+            if role == Qt.FontRole:
+                f = QFont()
+                f.setBold(True)
+                return f
+            if role == Qt.TextAlignmentRole:
+                return Qt.AlignCenter
+        return None
 
 
-def calc_ganancia(precio_compra: float, pvp: float) -> float:
-    if pvp <= 0:
-        return 0.0
-    try:
-        return round(1.0 - (precio_compra / pvp), 4)
-    except Exception:
-        return 0.0
-
-
-def observacion(descuento_monto: float, stock: int) -> str:
-    if descuento_monto >= 10 and stock > 1:
-        return "COMPRA MÍNIMA 2 UNIDADES"
-    return ""
-
-
-# ==========================================================
+# -------------------------------------------------
 # CONTROLADOR
-# ==========================================================
+# -------------------------------------------------
 class ControladorListaDistribuidores:
-    """
-    Controlador del módulo Lista de Distribuidores.
-    Genera información de productos para distribuidores y exporta a Excel.
-    """
-
-    # ==============================
-    # ENCABEZADOS
-    # ==============================
-    HEADERS_TABLA = [
-        "SKU",
-        "NOMBRE DEL PRODUCTO",
-        "VARIACIÓN",
-        "STOCK",
-        "PVP",
-        "PRECIO DE COMPRA",
-        "GANANCIA",
-        "DESCUENTO (%)",
-        "PRECIO DE DESCUENTO ($)",
-        "PVD",
-        "OBSERVACIÓN",
-        "URL",
-    ]
-
-    HEADERS_EXCEL = [
-        "SKU",
-        "NOMBRE DEL PRODUCTO",
-        "VARIACIÓN",
-        "STOCK",
-        "PVP",
-        "DESCUENTO (%)",
-        "PRECIO DE DESCUENTO ($)",
-        "PVD",
-        "OBSERVACIÓN",
-        "URL",
-    ]
-
-    # ==============================
     def __init__(self):
-        self.config = Configuracion()
-        self._cliente = None
-        self._simples = []
-        self._variados = []
+        self.cliente = ClienteWooCommerce()
+        self.simples = []
+        self.variados = []
 
-    # ==============================
-    def _inicializar_cliente(self):
-        if self._cliente is None:
-            url, ck, cs = self.config.obtener_credenciales()
-            self._cliente = ClienteWooCommerce(url, ck, cs)
+    # --------- REGLAS DE NEGOCIO ---------
+    def _por_descuento(self, ganancia):
+        if ganancia <= 0.1:
+            return 0.0
+        elif ganancia <= 0.6:
+            return 0.4 * ganancia - 0.04
+        else:
+            return 0.20
 
-    # ==============================
+    def _observacion(self, descuento, stock):
+        if descuento >= 10 and stock > 1:
+            return "COMPRA MÍNIMA 2 UNIDADES"
+        return ""
+
+    # --------- GENERAR LISTA ---------
     def generar_lista(self, callback_progreso=None):
-        """
-        Obtiene productos desde WooCommerce y los separa en simples y variables,
-        aplicando reglas de negocio.
-        """
-        self._inicializar_cliente()
-
-        productos = self._cliente.obtener_productos(per_page=100)
-        if not productos:
-            raise PyWooError("No se encontraron productos")
-
-        self._simples = []
-        self._variados = []
-
+        productos = self.cliente.obtener_productos(per_page=100)
         total = len(productos)
 
+        self.simples.clear()
+        self.variados.clear()
+
         for i, p in enumerate(productos, start=1):
+            if p.get("type") == "simple":
+                self._procesar_simple(p)
+            elif p.get("type") == "variable":
+                self._procesar_variaciones(p)
 
             if callback_progreso:
-                callback_progreso(i, total)
+                callback_progreso(
+                    int((i / total) * 100),
+                    f"Procesando producto {i} de {total}"
+                )
 
-            sku = p.get("sku") or ""
-            stock = int(p.get("stock_quantity") or 0)
+        return (
+            ModeloTablaDistribuidores(self.simples),
+            ModeloTablaDistribuidores(self.variados),
+        )
 
-            pvp = validar_precio(p.get("price"))
-            precio_compra = validar_precio(p.get("regular_price"))
+    # --------- PRODUCTOS SIMPLES ---------
+    def _procesar_simple(self, p):
+        stock = int(p.get("stock_quantity") or 0)
+        if stock <= 0:
+            return
 
-            ganancia = calc_ganancia(precio_compra, pvp)
-            descuento_pct = por_descuento(ganancia)
-            descuento_monto = round(pvp * descuento_pct, 4)
-            pvd = round(pvp - descuento_monto, 4)
+        pvp = float(p.get("price") or 0)
+        p_compra = float(p.get("purchase_price") or 0)
 
-            fila = {
-                "SKU": sku,
-                "NOMBRE DEL PRODUCTO": p.get("name", ""),
-                "VARIACIÓN": p.get("type", "simple"),
-                "STOCK": stock,
-                "PVP": pvp,
-                "PRECIO DE COMPRA": precio_compra,
-                "GANANCIA": ganancia,
-                "DESCUENTO (%)": descuento_pct,
-                "PRECIO DE DESCUENTO ($)": descuento_monto,
-                "PVD": pvd,
-                "OBSERVACIÓN": observacion(descuento_monto, stock),
-                "URL": p.get("permalink", ""),
-            }
+        ganancia = round(1 - (p_compra / pvp), 4) if pvp > 0 else 0
+        descuento_pct = self._por_descuento(ganancia)
+        descuento_valor = round(descuento_pct * pvp, 2)
+        pvd = round(pvp - descuento_valor, 2)
 
-            if p.get("type") == "variable":
-                self._variados.append(fila)
-            else:
-                self._simples.append(fila)
+        self.simples.append([
+            p.get("sku", ""),
+            p.get("name", ""),
+            "",
+            stock,
+            round(pvp, 2),
+            p_compra,
+            ganancia,
+            round(descuento_pct * 100, 2),
+            descuento_valor,
+            pvd,
+            self._observacion(descuento_valor, stock),
+            p.get("permalink", ""),
+        ])
 
-        return self._simples, self._variados
+    # --------- PRODUCTOS VARIADOS ---------
+    def _procesar_variaciones(self, producto):
+        for v in producto.get("variations_data", []):
+            stock = int(v.get("stock_quantity") or 0)
+            if stock <= 0:
+                continue
 
-    # ==============================
-    def exportar_excel(self, ruta_archivo):
-        """
-        Exporta la lista de distribuidores a Excel con encabezado reducido.
-        """
-        if not self._simples and not self._variados:
-            raise PyWooError("No hay datos para exportar")
+            pvp = float(v.get("price") or 0)
+            p_compra = float(v.get("purchase_price") or 0)
 
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Distribuidores"
+            ganancia = round(1 - (p_compra / pvp), 4) if pvp > 0 else 0
+            descuento_pct = self._por_descuento(ganancia)
+            descuento_valor = round(descuento_pct * pvp, 2)
+            pvd = round(pvp - descuento_valor, 2)
 
-        ws.append(self.HEADERS_EXCEL)
+            variacion = " | ".join(
+                f"{a.get('name')}: {a.get('option')}"
+                for a in v.get("attributes", [])
+            ) or "Variación"
 
-        for grupo in (self._simples, self._variados):
-            for fila in grupo:
-                ws.append([
-                    fila.get("SKU", ""),
-                    fila.get("NOMBRE DEL PRODUCTO", ""),
-                    fila.get("VARIACIÓN", ""),
-                    fila.get("STOCK", ""),
-                    fila.get("PVP", ""),
-                    fila.get("DESCUENTO (%)", ""),
-                    fila.get("PRECIO DE DESCUENTO ($)", ""),
-                    fila.get("PVD", ""),
-                    fila.get("OBSERVACIÓN", ""),
-                    fila.get("URL", ""),
-                ])
+            self.variados.append([
+                v.get("sku", ""),
+                producto.get("name", ""),
+                variacion,
+                stock,
+                round(pvp, 2),
+                p_compra,
+                ganancia,
+                round(descuento_pct * 100, 2),
+                descuento_valor,
+                pvd,
+                self._observacion(descuento_valor, stock),
+                producto.get("permalink", ""),
+            ])
 
-        wb.save(ruta_archivo)
+    # --------- EXPORTAR ---------
+    def exportar_excel(self, ruta):
+        wb = xlsxwriter.Workbook(ruta)
+
+        header = wb.add_format({"bold": True, "align": "center", "border": 1})
+        cell = wb.add_format({"border": 1})
+
+        for nombre, datos in (
+            ("Productos Simples", self.simples),
+            ("Productos Variados", self.variados),
+        ):
+            ws = wb.add_worksheet(nombre)
+
+            for col, h in enumerate(HEADERS_INTERNAL):
+                ws.write(0, col, h, header)
+                ws.set_column(col, col, 18)
+
+            for row, fila in enumerate(datos, start=1):
+                for col, val in enumerate(fila):
+                    ws.write(row, col, val, cell)
+
+            ws.freeze_panes(1, 0)
+
+        wb.close()

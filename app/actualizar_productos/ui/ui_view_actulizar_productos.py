@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'view_reporte_ventas.ui'
+## Form generated from reading UI file 'view_actualizar_productos.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -15,21 +15,21 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDateEdit, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QMainWindow, QProgressBar,
-    QPushButton, QSizePolicy, QSpacerItem, QTabWidget,
-    QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QLabel,
+    QMainWindow, QProgressBar, QPushButton, QSizePolicy,
+    QSpacerItem, QTabWidget, QTableView, QVBoxLayout,
+    QWidget)
 import iconos_rc
 
-class Ui_ReporteVentas(object):
-    def setupUi(self, ReporteVentas):
-        if not ReporteVentas.objectName():
-            ReporteVentas.setObjectName(u"ReporteVentas")
-        ReporteVentas.resize(1150, 700)
+class Ui_ActualizarProductos(object):
+    def setupUi(self, ActualizarProductos):
+        if not ActualizarProductos.objectName():
+            ActualizarProductos.setObjectName(u"ActualizarProductos")
+        ActualizarProductos.resize(1150, 700)
         icon = QIcon()
-        icon.addFile(u":/assets/icons/label_reporte_ventas.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        ReporteVentas.setWindowIcon(icon)
-        self.centralwidget = QWidget(ReporteVentas)
+        icon.addFile(u":/assets/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        ActualizarProductos.setWindowIcon(icon)
+        self.centralwidget = QWidget(ActualizarProductos)
         self.centralwidget.setObjectName(u"centralwidget")
         self.layoutMain = QVBoxLayout(self.centralwidget)
         self.layoutMain.setSpacing(16)
@@ -41,59 +41,32 @@ class Ui_ReporteVentas(object):
 
         self.hboxLayout = QHBoxLayout()
         self.hboxLayout.setObjectName(u"hboxLayout")
-        self.lblDesde = QLabel(self.centralwidget)
-        self.lblDesde.setObjectName(u"lblDesde")
+        self.btnSubirArchivo = QPushButton(self.centralwidget)
+        self.btnSubirArchivo.setObjectName(u"btnSubirArchivo")
 
-        self.hboxLayout.addWidget(self.lblDesde)
+        self.hboxLayout.addWidget(self.btnSubirArchivo)
 
-        self.dateDesde = QDateEdit(self.centralwidget)
-        self.dateDesde.setObjectName(u"dateDesde")
-        self.dateDesde.setCalendarPopup(True)
+        self.btnAplicar = QPushButton(self.centralwidget)
+        self.btnAplicar.setObjectName(u"btnAplicar")
 
-        self.hboxLayout.addWidget(self.dateDesde)
+        self.hboxLayout.addWidget(self.btnAplicar)
 
-        self.lblHasta = QLabel(self.centralwidget)
-        self.lblHasta.setObjectName(u"lblHasta")
+        self.labelArchivo = QLabel(self.centralwidget)
+        self.labelArchivo.setObjectName(u"labelArchivo")
 
-        self.hboxLayout.addWidget(self.lblHasta)
-
-        self.dateHasta = QDateEdit(self.centralwidget)
-        self.dateHasta.setObjectName(u"dateHasta")
-        self.dateHasta.setCalendarPopup(True)
-
-        self.hboxLayout.addWidget(self.dateHasta)
+        self.hboxLayout.addWidget(self.labelArchivo)
 
         self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.hboxLayout.addItem(self.spacerItem)
 
-        self.btnGenerar = QPushButton(self.centralwidget)
-        self.btnGenerar.setObjectName(u"btnGenerar")
-
-        self.hboxLayout.addWidget(self.btnGenerar)
-
-
-        self.layoutMain.addLayout(self.hboxLayout)
-
-        self.hboxLayout1 = QHBoxLayout()
-        self.hboxLayout1.setObjectName(u"hboxLayout1")
-        self.lblArchivo = QLabel(self.centralwidget)
-        self.lblArchivo.setObjectName(u"lblArchivo")
-
-        self.hboxLayout1.addWidget(self.lblArchivo)
-
-        self.lineSalida = QLineEdit(self.centralwidget)
-        self.lineSalida.setObjectName(u"lineSalida")
-
-        self.hboxLayout1.addWidget(self.lineSalida)
-
         self.btnExportar = QPushButton(self.centralwidget)
         self.btnExportar.setObjectName(u"btnExportar")
 
-        self.hboxLayout1.addWidget(self.btnExportar)
+        self.hboxLayout.addWidget(self.btnExportar)
 
 
-        self.layoutMain.addLayout(self.hboxLayout1)
+        self.layoutMain.addLayout(self.hboxLayout)
 
         self.layoutProgreso = QHBoxLayout()
         self.layoutProgreso.setObjectName(u"layoutProgreso")
@@ -138,12 +111,12 @@ class Ui_ReporteVentas(object):
 
         self.layoutMain.addWidget(self.tabWidget)
 
-        self.hboxLayout2 = QHBoxLayout()
-        self.hboxLayout2.setObjectName(u"hboxLayout2")
+        self.hboxLayout1 = QHBoxLayout()
+        self.hboxLayout1.setObjectName(u"hboxLayout1")
         self.btnVolver = QPushButton(self.centralwidget)
         self.btnVolver.setObjectName(u"btnVolver")
 
-        self.hboxLayout2.addWidget(self.btnVolver)
+        self.hboxLayout1.addWidget(self.btnVolver)
 
         self.labelEstado = QLabel(self.centralwidget)
         self.labelEstado.setObjectName(u"labelEstado")
@@ -155,25 +128,25 @@ class Ui_ReporteVentas(object):
         self.labelEstado.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
         self.labelEstado.setWordWrap(True)
 
-        self.hboxLayout2.addWidget(self.labelEstado)
+        self.hboxLayout1.addWidget(self.labelEstado)
 
         self.spacerItem1 = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.hboxLayout2.addItem(self.spacerItem1)
+        self.hboxLayout1.addItem(self.spacerItem1)
 
 
-        self.layoutMain.addLayout(self.hboxLayout2)
+        self.layoutMain.addLayout(self.hboxLayout1)
 
-        ReporteVentas.setCentralWidget(self.centralwidget)
+        ActualizarProductos.setCentralWidget(self.centralwidget)
 
-        self.retranslateUi(ReporteVentas)
+        self.retranslateUi(ActualizarProductos)
 
-        QMetaObject.connectSlotsByName(ReporteVentas)
+        QMetaObject.connectSlotsByName(ActualizarProductos)
     # setupUi
 
-    def retranslateUi(self, ReporteVentas):
-        ReporteVentas.setWindowTitle(QCoreApplication.translate("ReporteVentas", u"Reporte de Ventas", None))
-        ReporteVentas.setStyleSheet(QCoreApplication.translate("ReporteVentas", u"\n"
+    def retranslateUi(self, ActualizarProductos):
+        ActualizarProductos.setWindowTitle(QCoreApplication.translate("ActualizarProductos", u"Actualizaci\u00f3n de Productos", None))
+        ActualizarProductos.setStyleSheet(QCoreApplication.translate("ActualizarProductos", u"\n"
 "QMainWindow {\n"
 "    background-color: #f6f7fb;\n"
 "    font-family: Segoe UI;\n"
@@ -197,19 +170,26 @@ class Ui_ReporteVentas(object):
 "    color: white;\n"
 "}\n"
 "\n"
-"/* BOT\u00d3N PRIMARIO */\n"
-"QPushButton#btnGenerar {\n"
+"/* BOTONES PRIMARIOS */\n"
+"QPushButton#btnSubirArchivo,\n"
+"QPushButton#btnProcesar,\n"
+"QPushButton#btnAplicar {\n"
 "    background-color: #1e73f1;\n"
 "}\n"
-"QPushButton#btnGenerar:hover {\n"
+"QPushButton#btnSubirArchivo:hover,\n"
+"QPushButton#btnProcesar:hover,\n"
+"QPushButton#btnAplicar:hover {\n"
 "    background-color: #1558c0;\n"
 "}\n"
-"QPushButton#btnGenerar:pressed {\n"
+"QPushButton#btnSubirArchivo:pressed,\n"
+"QPushButton#btnProcesar:pressed,\n"
+"QPushButton#btnAplicar:pressed {\n"
 "    background-color: #0d47a1;\n"
 "}\n"
 "\n"
 "/* BOT\u00d3N EXPORTAR */\n"
-"QPushButton#btnExportar {\n"
+"QPus"
+                        "hButton#btnExportar {\n"
 "    background-color: #90caf9;\n"
 "    color: #0d47a1;\n"
 "}\n"
@@ -217,8 +197,7 @@ class Ui_ReporteVentas(object):
 "    background-color: #64b5f6;\n"
 "}\n"
 "QPushButton#btnExportar:pressed {\n"
-"    ba"
-                        "ckground-color: #42a5f5;\n"
+"    background-color: #42a5f5;\n"
 "}\n"
 "\n"
 "/* BOT\u00d3N VOLVER */\n"
@@ -255,21 +234,20 @@ class Ui_ReporteVentas(object):
 "}\n"
 "\n"
 "/* ---------- TABS ---------- */\n"
-"QTabWidget::pane {\n"
+"Q"
+                        "TabWidget::pane {\n"
 "    border: none;\n"
 "}\n"
 "   ", None))
-        self.labelTitulo.setText(QCoreApplication.translate("ReporteVentas", u"Reporte Ventas", None))
-        self.lblDesde.setText(QCoreApplication.translate("ReporteVentas", u"Desde", None))
-        self.lblHasta.setText(QCoreApplication.translate("ReporteVentas", u"Hasta", None))
-        self.btnGenerar.setText(QCoreApplication.translate("ReporteVentas", u"Generar Reporte", None))
-        self.lblArchivo.setText(QCoreApplication.translate("ReporteVentas", u"Nombre Archivo", None))
-        self.lineSalida.setPlaceholderText(QCoreApplication.translate("ReporteVentas", u"ventas_DESDE_HASTA.xlsx", None))
-        self.btnExportar.setText(QCoreApplication.translate("ReporteVentas", u"Exportar", None))
-        self.lblProcesando.setText(QCoreApplication.translate("ReporteVentas", u"Procesando:", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSimples), QCoreApplication.translate("ReporteVentas", u"Productos Simples", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVariados), QCoreApplication.translate("ReporteVentas", u"Productos Variados", None))
-        self.btnVolver.setText(QCoreApplication.translate("ReporteVentas", u"Volver al Men\u00fa", None))
+        self.labelTitulo.setText(QCoreApplication.translate("ActualizarProductos", u"Actualizaci\u00f3n de Productos", None))
+        self.btnSubirArchivo.setText(QCoreApplication.translate("ActualizarProductos", u"Subir CSV / Excel", None))
+        self.btnAplicar.setText(QCoreApplication.translate("ActualizarProductos", u"Aplicar Cambios", None))
+        self.labelArchivo.setText(QCoreApplication.translate("ActualizarProductos", u"Archivo: (ninguno)", None))
+        self.btnExportar.setText(QCoreApplication.translate("ActualizarProductos", u"Exportar", None))
+        self.lblProcesando.setText(QCoreApplication.translate("ActualizarProductos", u"Procesando:", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSimples), QCoreApplication.translate("ActualizarProductos", u"Productos Simples", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVariados), QCoreApplication.translate("ActualizarProductos", u"Productos Variados", None))
+        self.btnVolver.setText(QCoreApplication.translate("ActualizarProductos", u"Volver al Men\u00fa", None))
         self.labelEstado.setText("")
     # retranslateUi
 

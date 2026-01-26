@@ -1,342 +1,265 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainW_actualizarproductos</class>
- <widget class="QMainWindow" name="MainW_actualizarproductos">
+ <class>ActualizarProductos</class>
+ <widget class="QMainWindow" name="ActualizarProductos">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>700</width>
-    <height>479</height>
+    <width>1150</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Actualizar Productos</string>
+   <string>Actualización de Productos</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../../iconos.qrc">
     <normaloff>:/assets/icons/actualizar_productos.png</normaloff>:/assets/icons/actualizar_productos.png</iconset>
   </property>
+  <property name="styleSheet">
+   <string>
+QMainWindow {
+    background-color: #f6f7fb;
+    font-family: Segoe UI;
+}
+
+/* ---------- TÍTULO ---------- */
+QLabel#labelTitulo {
+    background-color: #1e73f1;
+    color: white;
+    font-size: 14pt;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+/* ---------- BOTONES (BASE) ---------- */
+QPushButton {
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-weight: bold;
+    color: white;
+}
+
+/* BOTONES PRIMARIOS */
+QPushButton#btnSubirArchivo,
+QPushButton#btnProcesar,
+QPushButton#btnAplicar {
+    background-color: #1e73f1;
+}
+QPushButton#btnSubirArchivo:hover,
+QPushButton#btnProcesar:hover,
+QPushButton#btnAplicar:hover {
+    background-color: #1558c0;
+}
+QPushButton#btnSubirArchivo:pressed,
+QPushButton#btnProcesar:pressed,
+QPushButton#btnAplicar:pressed {
+    background-color: #0d47a1;
+}
+
+/* BOTÓN EXPORTAR */
+QPushButton#btnExportar {
+    background-color: #90caf9;
+    color: #0d47a1;
+}
+QPushButton#btnExportar:hover {
+    background-color: #64b5f6;
+}
+QPushButton#btnExportar:pressed {
+    background-color: #42a5f5;
+}
+
+/* BOTÓN VOLVER */
+QPushButton#btnVolver {
+    background-color: #9e9e9e;
+}
+QPushButton#btnVolver:hover {
+    background-color: #757575;
+}
+QPushButton#btnVolver:pressed {
+    background-color: #616161;
+}
+
+/* ---------- PROGRESO ---------- */
+QLabel#lblProcesando {
+    color: #555555;
+    font-weight: bold;
+}
+
+QProgressBar {
+    border-radius: 6px;
+    background: #e0e0e0;
+}
+QProgressBar::chunk {
+    background-color: #1e73f1;
+}
+
+/* ---------- MENSAJE ESTADO ---------- */
+QLabel#labelEstado {
+    background-color: #ffffff;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #333333;
+}
+
+/* ---------- TABS ---------- */
+QTabWidget::pane {
+    border: none;
+}
+   </string>
+  </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QProgressBar" name="progressB_barra">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>170</y>
-      <width>691</width>
-      <height>23</height>
-     </rect>
+   <layout class="QVBoxLayout" name="layoutMain">
+    <property name="spacing">
+     <number>16</number>
     </property>
-    <property name="value">
-     <number>24</number>
-    </property>
-   </widget>
-   <widget class="QDateTimeEdit" name="dateTimeEdit">
-    <property name="geometry">
-     <rect>
-      <x>530</x>
-      <y>30</y>
-      <width>141</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">font: 9pt &quot;Consolas&quot;;</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="bt_volver">
-    <property name="geometry">
-     <rect>
-      <x>19</x>
-      <y>380</y>
-      <width>131</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(28, 115, 255);
-color: rgb(255, 255, 255);
-font: 75 10pt &quot;Arial Black&quot;;
-border-radius: 8px;
-padding: 6px 12px;</string>
-    </property>
-    <property name="text">
-     <string>Volver al Menú</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lb_blancocomentario">
-    <property name="geometry">
-     <rect>
-      <x>169</x>
-      <y>380</y>
-      <width>511</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));
-border-radius: 9px;
-padding: 10px 12px;
-
-</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lb_actualizar">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>681</width>
-      <height>58</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(28, 115, 255);
-color: rgb(255, 255, 255);
-font: 87 12pt &quot;Arial Black&quot;;
-border-radius: 10px; 
-padding: 8px 12px;
-</string>
-    </property>
-    <property name="text">
-     <string>Actualizar Productos</string>
-    </property>
-   </widget>
-   <widget class="QTabWidget" name="tb_productos">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>200</y>
-      <width>681</width>
-      <height>171</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">font: 9pt &quot;Arial&quot;;</string>
-    </property>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>Tab 1</string>
-     </attribute>
-    </widget>
-    <widget class="QWidget" name="tab_2">
-     <attribute name="title">
-      <string>Tab 2</string>
-     </attribute>
-    </widget>
-   </widget>
-   <widget class="QLabel" name="lb_fondoblanco">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>80</y>
-      <width>681</width>
-      <height>75</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));
-border-radius: 9px;
-padding: 10px 12px;
-
-</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="bt_exportar">
-    <property name="geometry">
-     <rect>
-      <x>540</x>
-      <y>90</y>
-      <width>131</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(28, 115, 255);
-color: rgb(255, 255, 255);
-font: 75 10pt &quot;Arial Black&quot;;
-border-radius: 8px;
-padding: 6px 12px;</string>
-    </property>
-    <property name="text">
-     <string>Exportar</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="bt_subirArchivo">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>90</y>
-      <width>131</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(28, 115, 255);
-color: rgb(255, 255, 255);
-font: 75 10pt &quot;Arial Black&quot;;
-border-radius: 8px;
-padding: 6px 12px;</string>
-    </property>
-    <property name="text">
-     <string>Subir Archivo</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lb_archivocomentario">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>100</y>
-      <width>201</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));
-border-radius: 9px;
-padding: 10px 12px;
-font: 10pt &quot;Arial&quot;;
-background-color: rgb(170, 209, 255);
-
-</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="bt_actualizar">
-    <property name="geometry">
-     <rect>
-      <x>390</x>
-      <y>90</y>
-      <width>131</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(28, 115, 255);
-color: rgb(255, 255, 255);
-font: 75 10pt &quot;Arial Black&quot;;
-border-radius: 8px;
-padding: 6px 12px;</string>
-    </property>
-    <property name="text">
-     <string>Actualizar</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lb_fecha">
-    <property name="geometry">
-     <rect>
-      <x>530</x>
-      <y>30</y>
-      <width>141</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">font: 9pt &quot;Consolas&quot;;
-color: rgb(255, 255, 255);</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
+    <item>
+     <widget class="QLabel" name="labelTitulo">
+      <property name="text">
+       <string>Actualización de Productos</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout">
+      <item>
+       <widget class="QPushButton" name="btnSubirArchivo">
+        <property name="text">
+         <string>Subir CSV / Excel</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnAplicar">
+        <property name="text">
+         <string>Aplicar Cambios</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelArchivo">
+        <property name="text">
+         <string>Archivo: (ninguno)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnExportar">
+        <property name="text">
+         <string>Exportar</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="layoutProgreso">
+      <item>
+       <widget class="QLabel" name="lblProcesando">
+        <property name="text">
+         <string>Procesando:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="textVisible">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <widget class="QWidget" name="tabSimples">
+       <attribute name="title">
+        <string>Productos Simples</string>
+       </attribute>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QTableView" name="tableSimples"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabVariados">
+       <attribute name="title">
+        <string>Productos Variados</string>
+       </attribute>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QTableView" name="tableVariados"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout">
+      <item>
+       <widget class="QPushButton" name="btnVolver">
+        <property name="text">
+         <string>Volver al Menú</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelEstado">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>700</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuHerramientas">
-    <property name="title">
-     <string>Herramientas</string>
-    </property>
-    <addaction name="actionSistema"/>
-    <addaction name="actionClaro"/>
-    <addaction name="actionOscuro"/>
-   </widget>
-   <widget class="QMenu" name="menuM_dulos">
-    <property name="title">
-     <string>Módulos</string>
-    </property>
-    <addaction name="actionReporte_Ventas"/>
-    <addaction name="actionInventario"/>
-    <addaction name="actionActualizaci_n_de_Productos"/>
-    <addaction name="actionLista_de_Distribuidores"/>
-   </widget>
-   <widget class="QMenu" name="menuAyuda">
-    <property name="title">
-     <string>Ayuda</string>
-    </property>
-    <addaction name="actionAcerca_de"/>
-   </widget>
-   <widget class="QMenu" name="menuCredenciales_API">
-    <property name="title">
-     <string>WooCommerce</string>
-    </property>
-    <addaction name="actionCredenciales_API"/>
-   </widget>
-   <addaction name="menuCredenciales_API"/>
-   <addaction name="menuM_dulos"/>
-   <addaction name="menuHerramientas"/>
-   <addaction name="menuAyuda"/>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionSistema">
-   <property name="text">
-    <string>Sistema</string>
-   </property>
-  </action>
-  <action name="actionClaro">
-   <property name="text">
-    <string>Claro</string>
-   </property>
-  </action>
-  <action name="actionOscuro">
-   <property name="text">
-    <string>Oscuro</string>
-   </property>
-  </action>
-  <action name="actionReporte_Ventas">
-   <property name="text">
-    <string>Reporte Ventas</string>
-   </property>
-  </action>
-  <action name="actionInventario">
-   <property name="text">
-    <string>Inventario</string>
-   </property>
-  </action>
-  <action name="actionActualizaci_n_de_Productos">
-   <property name="text">
-    <string>Actualización de Productos</string>
-   </property>
-  </action>
-  <action name="actionLista_de_Distribuidores">
-   <property name="text">
-    <string>Lista de Distribuidores</string>
-   </property>
-  </action>
-  <action name="actionAcerca_de">
-   <property name="text">
-    <string>Acerca de</string>
-   </property>
-  </action>
-  <action name="actionCredenciales_API">
-   <property name="text">
-    <string>Credenciales API</string>
-   </property>
-  </action>
  </widget>
  <resources>
   <include location="../../../iconos.qrc"/>

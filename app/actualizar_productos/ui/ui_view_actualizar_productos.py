@@ -11,195 +11,243 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-    QCursor, QFont, QFontDatabase, QGradient,
-    QIcon, QImage, QKeySequence, QLinearGradient,
-    QPainter, QPalette, QPixmap, QRadialGradient,
-    QTransform)
-from PySide6.QtWidgets import (QApplication, QDateTimeEdit, QLabel, QMainWindow,
-    QMenu, QMenuBar, QProgressBar, QPushButton,
-    QSizePolicy, QStatusBar, QTabWidget, QWidget)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QLabel,
+    QMainWindow, QProgressBar, QPushButton, QSizePolicy,
+    QSpacerItem, QTabWidget, QTableView, QVBoxLayout,
+    QWidget)
 import iconos_rc
 
-class Ui_MainW_actualizarproductos(object):
-    def setupUi(self, MainW_actualizarproductos):
-        if not MainW_actualizarproductos.objectName():
-            MainW_actualizarproductos.setObjectName(u"MainW_actualizarproductos")
-        MainW_actualizarproductos.resize(700, 479)
+class Ui_ActualizarProductos(object):
+    def setupUi(self, ActualizarProductos):
+        if not ActualizarProductos.objectName():
+            ActualizarProductos.setObjectName(u"ActualizarProductos")
+        ActualizarProductos.resize(1150, 700)
         icon = QIcon()
         icon.addFile(u":/assets/icons/actualizar_productos.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        MainW_actualizarproductos.setWindowIcon(icon)
-        self.actionSistema = QAction(MainW_actualizarproductos)
-        self.actionSistema.setObjectName(u"actionSistema")
-        self.actionClaro = QAction(MainW_actualizarproductos)
-        self.actionClaro.setObjectName(u"actionClaro")
-        self.actionOscuro = QAction(MainW_actualizarproductos)
-        self.actionOscuro.setObjectName(u"actionOscuro")
-        self.actionReporte_Ventas = QAction(MainW_actualizarproductos)
-        self.actionReporte_Ventas.setObjectName(u"actionReporte_Ventas")
-        self.actionInventario = QAction(MainW_actualizarproductos)
-        self.actionInventario.setObjectName(u"actionInventario")
-        self.actionActualizaci_n_de_Productos = QAction(MainW_actualizarproductos)
-        self.actionActualizaci_n_de_Productos.setObjectName(u"actionActualizaci_n_de_Productos")
-        self.actionLista_de_Distribuidores = QAction(MainW_actualizarproductos)
-        self.actionLista_de_Distribuidores.setObjectName(u"actionLista_de_Distribuidores")
-        self.actionAcerca_de = QAction(MainW_actualizarproductos)
-        self.actionAcerca_de.setObjectName(u"actionAcerca_de")
-        self.actionCredenciales_API = QAction(MainW_actualizarproductos)
-        self.actionCredenciales_API.setObjectName(u"actionCredenciales_API")
-        self.centralwidget = QWidget(MainW_actualizarproductos)
+        ActualizarProductos.setWindowIcon(icon)
+        self.centralwidget = QWidget(ActualizarProductos)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.progressB_barra = QProgressBar(self.centralwidget)
-        self.progressB_barra.setObjectName(u"progressB_barra")
-        self.progressB_barra.setGeometry(QRect(10, 170, 691, 23))
-        self.progressB_barra.setValue(24)
-        self.dateTimeEdit = QDateTimeEdit(self.centralwidget)
-        self.dateTimeEdit.setObjectName(u"dateTimeEdit")
-        self.dateTimeEdit.setGeometry(QRect(530, 30, 141, 22))
-        self.dateTimeEdit.setStyleSheet(u"font: 9pt \"Consolas\";")
-        self.bt_volver = QPushButton(self.centralwidget)
-        self.bt_volver.setObjectName(u"bt_volver")
-        self.bt_volver.setGeometry(QRect(19, 380, 131, 51))
-        self.bt_volver.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.lb_blancocomentario = QLabel(self.centralwidget)
-        self.lb_blancocomentario.setObjectName(u"lb_blancocomentario")
-        self.lb_blancocomentario.setGeometry(QRect(169, 380, 511, 51))
-        self.lb_blancocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"\n"
-"")
-        self.lb_actualizar = QLabel(self.centralwidget)
-        self.lb_actualizar.setObjectName(u"lb_actualizar")
-        self.lb_actualizar.setGeometry(QRect(10, 10, 681, 58))
-        self.lb_actualizar.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 87 12pt \"Arial Black\";\n"
-"border-radius: 10px; \n"
-"padding: 8px 12px;\n"
-"")
-        self.tb_productos = QTabWidget(self.centralwidget)
-        self.tb_productos.setObjectName(u"tb_productos")
-        self.tb_productos.setGeometry(QRect(10, 200, 681, 171))
-        self.tb_productos.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.tab = QWidget()
-        self.tab.setObjectName(u"tab")
-        self.tb_productos.addTab(self.tab, "")
-        self.tab_2 = QWidget()
-        self.tab_2.setObjectName(u"tab_2")
-        self.tb_productos.addTab(self.tab_2, "")
-        self.lb_fondoblanco = QLabel(self.centralwidget)
-        self.lb_fondoblanco.setObjectName(u"lb_fondoblanco")
-        self.lb_fondoblanco.setGeometry(QRect(10, 80, 681, 75))
-        self.lb_fondoblanco.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"\n"
-"")
-        self.bt_exportar = QPushButton(self.centralwidget)
-        self.bt_exportar.setObjectName(u"bt_exportar")
-        self.bt_exportar.setGeometry(QRect(540, 90, 131, 51))
-        self.bt_exportar.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.bt_subirArchivo = QPushButton(self.centralwidget)
-        self.bt_subirArchivo.setObjectName(u"bt_subirArchivo")
-        self.bt_subirArchivo.setGeometry(QRect(20, 90, 131, 51))
-        self.bt_subirArchivo.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.lb_archivocomentario = QLabel(self.centralwidget)
-        self.lb_archivocomentario.setObjectName(u"lb_archivocomentario")
-        self.lb_archivocomentario.setGeometry(QRect(160, 100, 201, 31))
-        self.lb_archivocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"font: 10pt \"Arial\";\n"
-"background-color: rgb(170, 209, 255);\n"
-"\n"
-"")
-        self.bt_actualizar = QPushButton(self.centralwidget)
-        self.bt_actualizar.setObjectName(u"bt_actualizar")
-        self.bt_actualizar.setGeometry(QRect(390, 90, 131, 51))
-        self.bt_actualizar.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.lb_fecha = QLabel(self.centralwidget)
-        self.lb_fecha.setObjectName(u"lb_fecha")
-        self.lb_fecha.setGeometry(QRect(530, 30, 141, 22))
-        self.lb_fecha.setStyleSheet(u"font: 9pt \"Consolas\";\n"
-"color: rgb(255, 255, 255);")
-        MainW_actualizarproductos.setCentralWidget(self.centralwidget)
-        self.menubar = QMenuBar(MainW_actualizarproductos)
-        self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 700, 21))
-        self.menuHerramientas = QMenu(self.menubar)
-        self.menuHerramientas.setObjectName(u"menuHerramientas")
-        self.menuM_dulos = QMenu(self.menubar)
-        self.menuM_dulos.setObjectName(u"menuM_dulos")
-        self.menuAyuda = QMenu(self.menubar)
-        self.menuAyuda.setObjectName(u"menuAyuda")
-        self.menuCredenciales_API = QMenu(self.menubar)
-        self.menuCredenciales_API.setObjectName(u"menuCredenciales_API")
-        MainW_actualizarproductos.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(MainW_actualizarproductos)
-        self.statusbar.setObjectName(u"statusbar")
-        MainW_actualizarproductos.setStatusBar(self.statusbar)
+        self.layoutMain = QVBoxLayout(self.centralwidget)
+        self.layoutMain.setSpacing(16)
+        self.layoutMain.setObjectName(u"layoutMain")
+        self.labelActualizarProductos = QLabel(self.centralwidget)
+        self.labelActualizarProductos.setObjectName(u"labelActualizarProductos")
 
-        self.menubar.addAction(self.menuCredenciales_API.menuAction())
-        self.menubar.addAction(self.menuM_dulos.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
-        self.menubar.addAction(self.menuAyuda.menuAction())
-        self.menuHerramientas.addAction(self.actionSistema)
-        self.menuHerramientas.addAction(self.actionClaro)
-        self.menuHerramientas.addAction(self.actionOscuro)
-        self.menuM_dulos.addAction(self.actionReporte_Ventas)
-        self.menuM_dulos.addAction(self.actionInventario)
-        self.menuM_dulos.addAction(self.actionActualizaci_n_de_Productos)
-        self.menuM_dulos.addAction(self.actionLista_de_Distribuidores)
-        self.menuAyuda.addAction(self.actionAcerca_de)
-        self.menuCredenciales_API.addAction(self.actionCredenciales_API)
+        self.layoutMain.addWidget(self.labelActualizarProductos)
 
-        self.retranslateUi(MainW_actualizarproductos)
+        self.hboxLayout = QHBoxLayout()
+        self.hboxLayout.setObjectName(u"hboxLayout")
+        self.btnSubirArchivo = QPushButton(self.centralwidget)
+        self.btnSubirArchivo.setObjectName(u"btnSubirArchivo")
 
-        QMetaObject.connectSlotsByName(MainW_actualizarproductos)
+        self.hboxLayout.addWidget(self.btnSubirArchivo)
+
+        self.btnAplicar = QPushButton(self.centralwidget)
+        self.btnAplicar.setObjectName(u"btnAplicar")
+
+        self.hboxLayout.addWidget(self.btnAplicar)
+
+        self.labelArchivo = QLabel(self.centralwidget)
+        self.labelArchivo.setObjectName(u"labelArchivo")
+
+        self.hboxLayout.addWidget(self.labelArchivo)
+
+        self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.hboxLayout.addItem(self.spacerItem)
+
+        self.btnExportar = QPushButton(self.centralwidget)
+        self.btnExportar.setObjectName(u"btnExportar")
+
+        self.hboxLayout.addWidget(self.btnExportar)
+
+
+        self.layoutMain.addLayout(self.hboxLayout)
+
+        self.layoutProgreso = QHBoxLayout()
+        self.layoutProgreso.setObjectName(u"layoutProgreso")
+        self.lblProcesando = QLabel(self.centralwidget)
+        self.lblProcesando.setObjectName(u"lblProcesando")
+        self.lblProcesando.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+
+        self.layoutProgreso.addWidget(self.lblProcesando)
+
+        self.progressBar = QProgressBar(self.centralwidget)
+        self.progressBar.setObjectName(u"progressBar")
+        self.progressBar.setValue(0)
+        self.progressBar.setTextVisible(True)
+
+        self.layoutProgreso.addWidget(self.progressBar)
+
+
+        self.layoutMain.addLayout(self.layoutProgreso)
+
+        self.tabWidget = QTabWidget(self.centralwidget)
+        self.tabWidget.setObjectName(u"tabWidget")
+        self.tabSimples = QWidget()
+        self.tabSimples.setObjectName(u"tabSimples")
+        self.vboxLayout = QVBoxLayout(self.tabSimples)
+        self.vboxLayout.setObjectName(u"vboxLayout")
+        self.tableSimples = QTableView(self.tabSimples)
+        self.tableSimples.setObjectName(u"tableSimples")
+
+        self.vboxLayout.addWidget(self.tableSimples)
+
+        self.tabWidget.addTab(self.tabSimples, "")
+        self.tabVariados = QWidget()
+        self.tabVariados.setObjectName(u"tabVariados")
+        self.vboxLayout1 = QVBoxLayout(self.tabVariados)
+        self.vboxLayout1.setObjectName(u"vboxLayout1")
+        self.tableVariados = QTableView(self.tabVariados)
+        self.tableVariados.setObjectName(u"tableVariados")
+
+        self.vboxLayout1.addWidget(self.tableVariados)
+
+        self.tabWidget.addTab(self.tabVariados, "")
+
+        self.layoutMain.addWidget(self.tabWidget)
+
+        self.hboxLayout1 = QHBoxLayout()
+        self.hboxLayout1.setObjectName(u"hboxLayout1")
+        self.btnVolver = QPushButton(self.centralwidget)
+        self.btnVolver.setObjectName(u"btnVolver")
+
+        self.hboxLayout1.addWidget(self.btnVolver)
+
+        self.labelEstado = QLabel(self.centralwidget)
+        self.labelEstado.setObjectName(u"labelEstado")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.labelEstado.sizePolicy().hasHeightForWidth())
+        self.labelEstado.setSizePolicy(sizePolicy)
+        self.labelEstado.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+        self.labelEstado.setWordWrap(True)
+
+        self.hboxLayout1.addWidget(self.labelEstado)
+
+        self.spacerItem1 = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.hboxLayout1.addItem(self.spacerItem1)
+
+
+        self.layoutMain.addLayout(self.hboxLayout1)
+
+        ActualizarProductos.setCentralWidget(self.centralwidget)
+
+        self.retranslateUi(ActualizarProductos)
+
+        QMetaObject.connectSlotsByName(ActualizarProductos)
     # setupUi
 
-    def retranslateUi(self, MainW_actualizarproductos):
-        MainW_actualizarproductos.setWindowTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizar Productos", None))
-        self.actionSistema.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Sistema", None))
-        self.actionClaro.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Claro", None))
-        self.actionOscuro.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Oscuro", None))
-        self.actionReporte_Ventas.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Reporte Ventas", None))
-        self.actionInventario.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Inventario", None))
-        self.actionActualizaci_n_de_Productos.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizaci\u00f3n de Productos", None))
-        self.actionLista_de_Distribuidores.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Lista de Distribuidores", None))
-        self.actionAcerca_de.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Acerca de", None))
-        self.actionCredenciales_API.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Credenciales API", None))
-        self.bt_volver.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Volver al Men\u00fa", None))
-        self.lb_blancocomentario.setText("")
-        self.lb_actualizar.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizar Productos", None))
-        self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab), QCoreApplication.translate("MainW_actualizarproductos", u"Tab 1", None))
-        self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab_2), QCoreApplication.translate("MainW_actualizarproductos", u"Tab 2", None))
-        self.lb_fondoblanco.setText("")
-        self.bt_exportar.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Exportar", None))
-        self.bt_subirArchivo.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Subir Archivo", None))
-        self.lb_archivocomentario.setText("")
-        self.bt_actualizar.setText(QCoreApplication.translate("MainW_actualizarproductos", u"Actualizar", None))
-        self.lb_fecha.setText("")
-        self.menuHerramientas.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Herramientas", None))
-        self.menuM_dulos.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"M\u00f3dulos", None))
-        self.menuAyuda.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"Ayuda", None))
-        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainW_actualizarproductos", u"WooCommerce", None))
+    def retranslateUi(self, ActualizarProductos):
+        ActualizarProductos.setWindowTitle(QCoreApplication.translate("ActualizarProductos", u"Actualizaci\u00f3n de Productos", None))
+        ActualizarProductos.setStyleSheet(QCoreApplication.translate("ActualizarProductos", u"\n"
+"QMainWindow {\n"
+"    background-color: #f6f7fb;\n"
+"    font-family: Segoe UI;\n"
+"}\n"
+"\n"
+"/* ---------- T\u00cdTULO ---------- */\n"
+"QLabel#labelTitulo {\n"
+"    background-color: #1e73f1;\n"
+"    color: white;\n"
+"    font-size: 14pt;\n"
+"    font-weight: bold;\n"
+"    padding: 10px;\n"
+"    border-radius: 8px;\n"
+"}\n"
+"\n"
+"/* ---------- BOTONES (BASE) ---------- */\n"
+"QPushButton {\n"
+"    border-radius: 8px;\n"
+"    padding: 6px 14px;\n"
+"    font-weight: bold;\n"
+"    color: white;\n"
+"}\n"
+"\n"
+"/* BOTONES PRIMARIOS */\n"
+"QPushButton#btnSubirArchivo,\n"
+"QPushButton#btnProcesar,\n"
+"QPushButton#btnAplicar {\n"
+"    background-color: #1e73f1;\n"
+"}\n"
+"QPushButton#btnSubirArchivo:hover,\n"
+"QPushButton#btnProcesar:hover,\n"
+"QPushButton#btnAplicar:hover {\n"
+"    background-color: #1558c0;\n"
+"}\n"
+"QPushButton#btnSubirArchivo:pressed,\n"
+"QPushButton#btnProcesar:pressed,\n"
+"QPushButton#btnAplicar:pressed {\n"
+"    background-color: #0d47a1;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N EXPORTAR */\n"
+"QPus"
+                        "hButton#btnExportar {\n"
+"    background-color: #90caf9;\n"
+"    color: #0d47a1;\n"
+"}\n"
+"QPushButton#btnExportar:hover {\n"
+"    background-color: #64b5f6;\n"
+"}\n"
+"QPushButton#btnExportar:pressed {\n"
+"    background-color: #42a5f5;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N VOLVER */\n"
+"QPushButton#btnVolver {\n"
+"    background-color: #9e9e9e;\n"
+"}\n"
+"QPushButton#btnVolver:hover {\n"
+"    background-color: #757575;\n"
+"}\n"
+"QPushButton#btnVolver:pressed {\n"
+"    background-color: #616161;\n"
+"}\n"
+"\n"
+"/* ---------- PROGRESO ---------- */\n"
+"QLabel#lblProcesando {\n"
+"    color: #555555;\n"
+"    font-weight: bold;\n"
+"}\n"
+"\n"
+"QProgressBar {\n"
+"    border-radius: 6px;\n"
+"    background: #e0e0e0;\n"
+"}\n"
+"QProgressBar::chunk {\n"
+"    background-color: #1e73f1;\n"
+"}\n"
+"\n"
+"/* ---------- MENSAJE ESTADO ---------- */\n"
+"QLabel#labelEstado {\n"
+"    background-color: #ffffff;\n"
+"    border-radius: 6px;\n"
+"    padding: 6px 10px;\n"
+"    color: #333333;\n"
+"}\n"
+"\n"
+"/* ---------- TABS ---------- */\n"
+"Q"
+                        "TabWidget::pane {\n"
+"    border: none;\n"
+"}\n"
+"   ", None))
+        self.labelActualizarProductos.setText(QCoreApplication.translate("ActualizarProductos", u"Actualizaci\u00f3n de Productos", None))
+        self.btnSubirArchivo.setText(QCoreApplication.translate("ActualizarProductos", u"Subir CSV / Excel", None))
+        self.btnAplicar.setText(QCoreApplication.translate("ActualizarProductos", u"Aplicar Cambios", None))
+        self.labelArchivo.setText(QCoreApplication.translate("ActualizarProductos", u"Archivo: (ninguno)", None))
+        self.btnExportar.setText(QCoreApplication.translate("ActualizarProductos", u"Exportar", None))
+        self.lblProcesando.setText(QCoreApplication.translate("ActualizarProductos", u"Procesando:", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSimples), QCoreApplication.translate("ActualizarProductos", u"Productos Simples", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVariados), QCoreApplication.translate("ActualizarProductos", u"Productos Variados", None))
+        self.btnVolver.setText(QCoreApplication.translate("ActualizarProductos", u"Volver al Men\u00fa", None))
+        self.labelEstado.setText("")
     # retranslateUi
 

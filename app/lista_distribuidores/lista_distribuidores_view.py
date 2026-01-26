@@ -1,150 +1,154 @@
-from PySide6.QtWidgets import (
-    QMainWindow,
-    QMessageBox,
-    QTableWidget,
-    QTableWidgetItem
-)
-from PySide6.QtCore import QDateTime
-from PySide6.QtGui import QFont
-from datetime import datetime
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QHeaderView
+from PySide6.QtCore import Qt, QThread
 
-from app.lista_distribuidores.ui.ui_view_lista_distribuidores import Ui_MainWindow
+from app.lista_distribuidores.ui.ui_view_lista_distribuidores import Ui_ListaDistribuidores
 from app.lista_distribuidores.controlador_lista_distribuidores import ControladorListaDistribuidores
-from app.core.excepciones import PyWooError
+from app.lista_distribuidores.worker_lista_distribuidores import WorkerListaDistribuidores
+
+from app.core.proceso import ProcessDialog
+from app.core.dialogos import mostrar_error, mostrar_info
 
 
 class ListaDistribuidoresView(QMainWindow):
-    """
-    Vista del módulo Lista de Distribuidores.
-    """
-
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.ui = Ui_MainWindow()
+        self.ui = Ui_ListaDistribuidores()
         self.ui.setupUi(self)
-        self.setFixedSize(self.size())
-        self.setMinimumSize(self.size())
-        self.setMaximumSize(self.size())
 
         self.controlador = ControladorListaDistribuidores()
 
-        self._configurar_ui()
-        self._configurar_tablas()
-        self._conectar_senales()
+        self.thread = None
+        self.worker = None
+        self.dialogo = None
+        self._generado = False
 
-    # ==================================================
-    # CONFIGURACIÓN INICIAL
-    # ==================================================
-    def _configurar_ui(self):
-        self.ui.progressB_barra.setValue(0)
-        self.ui.lb_blancocomentario.setText("")
-        self.ui.lb_fecha.setText(
-            datetime.now().strftime("%Y-%m-%d %H:%M")
-        )
-        self.ui.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
+        self._configurar()
+        self._conectar()
 
-    # ==================================================
-    # TABLAS
-    # ==================================================
-    def _configurar_tablas(self):
-        """
-        Configura las dos pestañas del QTabWidget con QTableWidget reales
-        """
-        self.tabla_simples = QTableWidget()
-        self.tabla_variados = QTableWidget()
+    # -------------------------------------------------
+    # CONFIGURACIÓN
+    # -------------------------------------------------
+    def _configurar(self):
+        for tabla in (self.ui.tableSimples, self.ui.tableVariados):
+            header = tabla.horizontalHeader()
+            header.setSectionResizeMode(QHeaderView.ResizeToContents)
+            header.setStretchLastSection(True)
 
-        headers = self.controlador.HEADERS_TABLA
+        self.ui.btnExportar.setEnabled(False)
+        self.ui.labelEstado.setText("")
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
 
-        font = QFont()
-        font.setBold(True)
+    def _conectar(self):
+        self.ui.btnGenerar.clicked.connect(self._generar)
+        self.ui.btnExportar.clicked.connect(self._exportar)
+        self.ui.btnVolver.clicked.connect(self._cerrar)
 
-        for tabla in (self.tabla_simples, self.tabla_variados):
-            tabla.setColumnCount(len(headers))
-            tabla.setHorizontalHeaderLabels(headers)
-            tabla.setEditTriggers(QTableWidget.NoEditTriggers)
-            tabla.setAlternatingRowColors(True)
+    # -------------------------------------------------
+    # CONTROL DE HILO
+    # -------------------------------------------------
+    def _detener_hilo(self):
+        if self.thread and self.thread.isRunning():
+            self.thread.quit()
+            self.thread.wait()
 
-            for i in range(len(headers)):
-                tabla.horizontalHeaderItem(i).setFont(font)
+        self.thread = None
+        self.worker = None
 
-            tabla.resizeColumnsToContents()
+    def closeEvent(self, event):
+        self._detener_hilo()
+        event.accept()
 
-        # Limpiar tabs creados por Qt Designer
-        self.ui.tb_productos.clear()
+    def _cerrar(self):
+        self._detener_hilo()
+        self.close()
 
-        self.ui.tb_productos.addTab(self.tabla_simples, "Productos Simples")
-        self.ui.tb_productos.addTab(self.tabla_variados, "Productos Variados")
+    # -------------------------------------------------
+    # GENERAR LISTA (ASYNC)
+    # -------------------------------------------------
+    def _generar(self):
+        self._detener_hilo()
+        self._limpiar_estado()
 
-    # ==================================================
-    # SEÑALES
-    # ==================================================
-    def _conectar_senales(self):
-        self.ui.bt_generar.clicked.connect(self.generar_lista)
-        self.ui.bt_exportar.clicked.connect(self.exportar_lista)
-        self.ui.bt_volver.clicked.connect(self.close)
+        self.dialogo = ProcessDialog(self)
+        self.dialogo.ui.lblTitulo.setText("Generando Lista de Distribuidores")
+        self.dialogo.reset()
+        self.dialogo.set_mensaje("Generando lista...")
+        self.dialogo.show()
 
-    # ==================================================
-    # LÓGICA PRINCIPAL
-    # ==================================================
-    def generar_lista(self):
-        try:
-            self.ui.lb_blancocomentario.setText("Generando lista de distribuidores...")
-            self.ui.progressB_barra.setValue(5)
+        self.thread = QThread(self)
+        self.worker = WorkerListaDistribuidores(self.controlador)
+        self.worker.moveToThread(self.thread)
 
-            def progreso(actual, total):
-                if total > 0:
-                    valor = int((actual / total) * 90)
-                    self.ui.progressB_barra.setValue(valor)
+        self.thread.started.connect(self.worker.ejecutar)
+        self.worker.progreso.connect(self._actualizar_progreso)
+        self.worker.terminado.connect(self._finalizar)
+        self.worker.error.connect(self._error)
 
-            simples, variados = self.controlador.generar_lista(progreso)
+        self.worker.terminado.connect(self.thread.quit)
+        self.worker.terminado.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
 
-            self._cargar_tabla(self.tabla_simples, simples)
-            self._cargar_tabla(self.tabla_variados, variados)
+        self.thread.start()
 
-            self.ui.progressB_barra.setValue(100)
-            self.ui.lb_blancocomentario.setText("Se Generó con Éxito")
+    def _actualizar_progreso(self, valor, mensaje):
+        self.ui.progressBar.setValue(valor)
+        self.ui.lblProcesando.setText(mensaje)
+        if self.dialogo:
+            self.dialogo.set_progreso(valor)
+            self.dialogo.set_mensaje(mensaje)
 
-        except PyWooError as e:
-            QMessageBox.critical(self, "Error", str(e))
-            self.ui.lb_blancocomentario.setText("Error al generar la lista")
-            self.ui.progressB_barra.setValue(0)
+    def _finalizar(self, modelo_simples, modelo_variados):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
 
-    # ==================================================
-    # CARGA DE DATOS EN TABLA
-    # ==================================================
-    def _cargar_tabla(self, tabla: QTableWidget, datos: list):
-        tabla.setRowCount(0)
-        headers = self.controlador.HEADERS_TABLA
+        self.ui.tableSimples.setModel(modelo_simples)
+        self.ui.tableVariados.setModel(modelo_variados)
 
-        for fila in datos:
-            row = tabla.rowCount()
-            tabla.insertRow(row)
+        self.ui.labelEstado.setText("Lista generada correctamente")
+        self.ui.btnExportar.setEnabled(True)
+        self._generado = True
 
-            for col, header in enumerate(headers):
-                valor = fila.get(header, "")
-                tabla.setItem(row, col, QTableWidgetItem(str(valor)))
+        mostrar_info("Lista de distribuidores generada correctamente.")
 
-        tabla.resizeColumnsToContents()
+    def _error(self, mensaje):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+        mostrar_error(mensaje)
 
-    # ==================================================
+    # -------------------------------------------------
     # EXPORTAR
-    # ==================================================
-    def exportar_lista(self):
-        try:
-            self.ui.progressB_barra.setValue(90)
+    # -------------------------------------------------
+    def _exportar(self):
+        if not self._generado:
+            mostrar_error("Debe generar la lista primero.")
+            return
 
-            nombre_archivo = "lista_distribuidores.xlsx"
-            self.controlador.exportar_excel(nombre_archivo)
+        ruta, _ = QFileDialog.getSaveFileName(
+            self,
+            "Exportar lista",
+            "lista_distribuidores.xlsx",
+            "Excel (*.xlsx)"
+        )
 
-            self.ui.progressB_barra.setValue(100)
-            QMessageBox.information(
-                self,
-                "Exportación completada",
-                f"Archivo generado correctamente:\n{nombre_archivo}"
-            )
+        if ruta:
+            try:
+                self.controlador.exportar_excel(ruta)
+                mostrar_info("Archivo exportado correctamente.")
+            except Exception as e:
+                mostrar_error(str(e))
 
-        except PyWooError as e:
-            QMessageBox.critical(self, "Error", str(e))
-            self.ui.lb_blancocomentario.setText("Error al exportar la lista")
-            self.ui.progressB_barra.setValue(0)
+    # -------------------------------------------------
+    # UTILIDADES
+    # -------------------------------------------------
+    def _limpiar_estado(self):
+        self.ui.tableSimples.setModel(None)
+        self.ui.tableVariados.setModel(None)
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
+        self.ui.labelEstado.setText("")
+        self.ui.btnExportar.setEnabled(False)
+        self._generado = False

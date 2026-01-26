@@ -1,63 +1,68 @@
-from PySide6.QtWidgets import QMainWindow
-from PySide6.QtCore import QDate
-from app.menu.ui.ui_view_menu import Ui_MainW_menu
-from app.reporte_ventas.reporte_ventas_view import ReporteVentasView
-from app.inventario.inventario_view import InventarioView
-from app.actualizar_productos.actualizar_productos_view import ActualizarProductosView
-from app.lista_distribuidores.lista_distribuidores_view import ListaDistribuidoresView
-from app.core.credenciales_view import VentanaCredenciales
-from app.core.dialogos import DialogoCredencialesWoo
+from PySide6.QtWidgets import QMainWindow, QApplication
 
-class MenuPrincipal(QMainWindow):
-    def __init__(self):
-        super().__init__()
+from app.menu.ui.ui_view_menu import Ui_MenuPrincipal
+from app.menu.menu_base_view import MenuBaseView
+from app.core.temas import aplicar_tema_sistema
+from app.core.configuracion import Configuracion
+from app.core.excepciones import ConfiguracionError
+from app.core.credenciales_view import CredencialesApiWooView
+from app.core.dialogos import mostrar_error
 
-        self.ui = Ui_MainW_menu()
+
+
+class MenuPrincipalView(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.ui = Ui_MenuPrincipal()
         self.ui.setupUi(self)
-        self.setFixedSize(self.size())
-        self.setMinimumSize(self.size())
-        self.setMaximumSize(self.size())
 
-        self._inicializar_ui()
-        self._conectar_senales()
+        self._conectar_eventos()
 
-    def _inicializar_ui(self):
-        self.ui.lb_fecha.setText(QDate.currentDate().toString("dd/MM/yyyy"))
+        # ✅ Aplica tema de sistema correctamente
+        aplicar_tema_sistema(QApplication.instance())
 
-    def _conectar_senales(self):
-        self.ui.bt_inventario.clicked.connect(self.abrir_inventario)
-        self.ui.bt_actualizarproductos.clicked.connect(self.abrir_actualizar_productos)
-        self.ui.bt_reporteventas.clicked.connect(self.abrir_reporte_ventas)
-        self.ui.bt_listadistribuidores.clicked.connect(self.abrir_distribuidores)
+        self.ventana = None
 
+    def _conectar_eventos(self):
+        self.ui.btnVentas.clicked.connect(self._ventas)
+        self.ui.btnInventario.clicked.connect(self._inventario)
+        self.ui.btnActualizarProductos.clicked.connect(self._actualizar)
+        self.ui.btnDistribuidores.clicked.connect(self._distribuidores)
 
-        self.ui.actionCredenciales_API.triggered.connect(self.abrir_credenciales)
+    def _abrir_modulo(self, VentanaClase):
+        if not self._asegurar_credenciales():
+            return
 
-        self.ui.actionReporte_Ventas.triggered.connect(self.abrir_reporte_ventas)
-        self.ui.actionInventario.triggered.connect(self.abrir_inventario)
-        self.ui.actionActualizar_Productos.triggered.connect(self.abrir_actualizar_productos)
-        self.ui.actionLista_de_Dsitribuidores.triggered.connect(self.abrir_distribuidores)
+        if self.ventana:
+            try:
+                self.ventana.close()
+            except Exception:
+                pass
 
-        
+        self.ventana = VentanaClase(self)
+        self.ventana.show()
+        self.hide()
 
-    def abrir_inventario(self):
-        self.inventario = InventarioView()
-        self.inventario.show()
-
-    def abrir_actualizar_productos(self):
-        self.actualizar = ActualizarProductosView()
-        self.actualizar.show()
-
-    def abrir_reporte_ventas(self):
-        self.reporte = ReporteVentasView()
-        self.reporte.show()
-
-    def abrir_distribuidores(self):
-        self.distribuidores = ListaDistribuidoresView()
-        self.distribuidores.show()
-
-    def abrir_credenciales(self):
-        dlg = DialogoCredencialesWoo(self)
-        dlg.exec()
+        self.ventana.destroyed.connect(self.show)
 
 
+    def _mostrar_menu(self):
+        self.show()
+
+
+    def _ventas(self):
+        from app.reporte_ventas.reporte_ventas_view import ReporteVentasView
+        self._abrir_modulo(ReporteVentasView)
+
+    def _inventario(self):
+        from app.inventario.inventario_view import InventarioView
+        self._abrir_modulo(InventarioView)
+
+    def _actualizar(self):
+        from app.actualizar_productos.actualizar_productos_view import ActualizarProductosView
+        self._abrir_modulo(ActualizarProductosView)
+
+    def _distribuidores(self):
+        from app.lista_distribuidores.lista_distribuidores_view import ListaDistribuidoresView
+        self._abrir_modulo(ListaDistribuidoresView)

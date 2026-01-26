@@ -1,192 +1,217 @@
-from PySide6.QtWidgets import (QMainWindow, QMessageBox, QFileDialog, QTableWidget, QTableWidgetItem)
-from PySide6.QtCore import QDateTime, QThread, Signal
-from PySide6.QtGui import QFont
-from datetime import datetime
-import os
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QHeaderView
+from PySide6.QtCore import Qt, QThread
 
-from app.actualizar_productos.ui.ui_view_actualizar_productos import Ui_MainW_actualizarproductos
+from app.actualizar_productos.ui.ui_view_actualizar_productos import Ui_ActualizarProductos
 from app.actualizar_productos.controlador_actualizar_productos import ControladorActualizarProductos
-from app.core.excepciones import PyWooError
+from app.actualizar_productos.worker_actualizar_productos import (
+    WorkerActualizarProductos,
+    WorkerAplicarCambios
+)
+
+from app.core.proceso import ProcessDialog
+from app.core.dialogos import mostrar_error, mostrar_info
 
 
-class WorkerActualizarProductos(QThread):
-    progreso = Signal(int)
-    terminado = Signal(list, list)
-    error = Signal(str)
-
-    def __init__(self, controlador):
-        super().__init__()
-        self.controlador = controlador
-
-    def run(self):
-        try:
-            def callback(actual, total):
-                porcentaje = int((actual / total) * 100)
-                self.progreso.emit(porcentaje)
-
-            simples, variados = self.controlador.actualizar_productos(callback)
-            self.terminado.emit(simples, variados)
-
-        except Exception as e:
-            self.error.emit(str(e))
-
-
-# ==========================================================
 class ActualizarProductosView(QMainWindow):
-    """
-    Vista del módulo Actualizar Productos.
-    """
-
-    HEADERS = [
-        "SKU", "NOMBRE DEL PRODUCTO", "STOCK",
-        "PRECIO COMPRA", "PRECIO VENTA", "ESTADO"
-    ]
-
-    # ------------------------------------------------------
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.ui = Ui_MainW_actualizarproductos()
+        self.ui = Ui_ActualizarProductos()
         self.ui.setupUi(self)
 
         self.controlador = ControladorActualizarProductos()
+        self.datos_archivo = None
+
+        self.thread = None
         self.worker = None
-        self._archivo_cargado = False
+        self.thread_aplicar = None
+        self.worker_aplicar = None
 
-        self._configurar_ui()
+        self.dialogo = None
+        self._procesado = False
+
         self._configurar_tablas()
-        self._conectar_senales()
+        self._configurar_estado()
+        self._conectar()
 
-    # ------------------------------------------------------
-    def _configurar_ui(self):
-        self.ui.progressB_barra.setValue(0)
-        self.ui.lb_archivocomentario.setText("")
-        self.ui.lb_blancocomentario.setText("")
-        self.ui.lb_fecha.setText(datetime.now().strftime("%Y-%m-%d %H:%M"))
-        self.ui.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
-
-    # ------------------------------------------------------
+    # -------------------------------------------------
+    # CONFIGURACIÓN
+    # -------------------------------------------------
     def _configurar_tablas(self):
-        self.tabla_simples = QTableWidget()
-        self.tabla_variados = QTableWidget()
+        for tabla in (self.ui.tableSimples, self.ui.tableVariados):
+            header = tabla.horizontalHeader()
+            header.setSectionResizeMode(QHeaderView.Interactive)
+            header.setStretchLastSection(False)
 
-        font = QFont()
-        font.setBold(True)
+    def _configurar_estado(self):
+        self.ui.btnExportar.setEnabled(False)
+        self.ui.labelEstado.setText("")
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
 
-        for tabla in (self.tabla_simples, self.tabla_variados):
-            tabla.setColumnCount(len(self.HEADERS))
-            tabla.setHorizontalHeaderLabels(self.HEADERS)
-            tabla.setEditTriggers(QTableWidget.DoubleClicked)
+    # -------------------------------------------------
+    # CONEXIONES
+    # -------------------------------------------------
+    def _conectar(self):
+        self.ui.btnSubirArchivo.clicked.connect(self._subir_archivo)
+        self.ui.btnAplicar.clicked.connect(self._aplicar_async)
+        self.ui.btnExportar.clicked.connect(self._exportar)
+        self.ui.btnVolver.clicked.connect(self._cerrar)
 
-            for i in range(len(self.HEADERS)):
-                tabla.horizontalHeaderItem(i).setFont(font)
+    # -------------------------------------------------
+    # CONTROL DE HILOS
+    # -------------------------------------------------
+    def _detener_hilos(self):
+        for thread in (self.thread, self.thread_aplicar):
+            if thread and thread.isRunning():
+                thread.quit()
+                thread.wait()
 
-        self.ui.tb_productos.clear()
-        self.ui.tb_productos.addTab(self.tabla_simples, "Productos Simples")
-        self.ui.tb_productos.addTab(self.tabla_variados, "Productos Variados")
+        self.thread = None
+        self.worker = None
+        self.thread_aplicar = None
+        self.worker_aplicar = None
 
-    # ------------------------------------------------------
-    def _conectar_senales(self):
-        self.ui.bt_subirArchivo.clicked.connect(self.subir_archivo)
-        self.ui.bt_actualizar.clicked.connect(self.actualizar_productos)
-        self.ui.bt_exportar.clicked.connect(self.exportar_excel)
-        self.ui.bt_volver.clicked.connect(self.close)
+    def closeEvent(self, event):
+        self._detener_hilos()
+        event.accept()
 
-    # ------------------------------------------------------
-    def subir_archivo(self):
+    def _cerrar(self):
+        self._detener_hilos()
+        self.close()
+
+    # -------------------------------------------------
+    # ARCHIVO
+    # -------------------------------------------------
+    def _subir_archivo(self):
         ruta, _ = QFileDialog.getOpenFileName(
             self,
             "Seleccionar archivo",
             "",
-            "Excel (*.xlsx);;CSV (*.csv)"
+            "Excel (*.xlsx *.xls);;CSV (*.csv)"
         )
-
         if not ruta:
             return
 
-        extension = os.path.splitext(ruta)[1].lower()
-        if extension not in (".xlsx", ".csv"):
-            self.ui.lb_archivocomentario.setText("Vuelva a Cargar el Archivo")
-            return
-
         try:
-            self.controlador.cargar_archivo(ruta)
+            self.datos_archivo = self.controlador.cargar_archivo(ruta)
+            self.ui.labelArchivo.setText(f"Archivo: {ruta.split('/')[-1]}")
+            self._procesar_async()
+        except Exception as e:
+            mostrar_error(str(e))
 
-            self._archivo_cargado = True
-            self.ui.lb_archivocomentario.setText("Cargado Correctamente")
-            self.ui.lb_blancocomentario.setText("Archivo listo para actualizar")
-            self.ui.progressB_barra.setValue(30)
+    # -------------------------------------------------
+    # PROCESAR (ASYNC)
+    # -------------------------------------------------
+    def _procesar_async(self):
+        self._detener_hilos()
 
-        except PyWooError as e:
-            self.ui.lb_archivocomentario.setText(str(e))
-            self.ui.progressB_barra.setValue(0)
+        self._procesado = False
+        self.ui.btnExportar.setEnabled(False)
+        self.ui.tableSimples.setModel(None)
+        self.ui.tableVariados.setModel(None)
 
-    # ------------------------------------------------------
-    def actualizar_productos(self):
-        if not self._archivo_cargado:
-            QMessageBox.warning(self, "Atención", "Debe cargar un archivo primero")
+        self.dialogo = ProcessDialog(self)
+        self.dialogo.ui.lblTitulo.setText("Procesando productos")
+        self.dialogo.reset()
+        self.dialogo.set_mensaje("Procesando...")
+        self.dialogo.show()
+
+        self.thread = QThread(self)
+        self.worker = WorkerActualizarProductos(self.controlador, self.datos_archivo)
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.ejecutar)
+        self.worker.progreso.connect(self._actualizar_progreso)
+        self.worker.terminado.connect(self._finalizar_proceso)
+        self.worker.error.connect(self._error_proceso)
+
+        self.worker.terminado.connect(self.thread.quit)
+        self.worker.terminado.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+    def _aplicar_async(self):
+        if not self._procesado:
+            mostrar_error("Primero debe procesar los productos.")
             return
 
-        self.ui.lb_blancocomentario.setText("Actualizando productos...")
-        self.ui.progressB_barra.setValue(0)
+        self._detener_hilos()
 
-        self.worker = WorkerActualizarProductos(self.controlador)
-        self.worker.progreso.connect(self.ui.progressB_barra.setValue)
-        self.worker.terminado.connect(self._actualizacion_finalizada)
-        self.worker.error.connect(self._mostrar_error)
+        self.dialogo = ProcessDialog(self)
+        self.dialogo.ui.lblTitulo.setText("Aplicando cambios")
+        self.dialogo.reset()
+        self.dialogo.set_mensaje("Aplicando cambios...")
+        self.dialogo.show()
 
-        self.worker.start()
+        self.thread_aplicar = QThread(self)
+        self.worker_aplicar = WorkerAplicarCambios(self.controlador)
+        self.worker_aplicar.moveToThread(self.thread_aplicar)
 
-    # ------------------------------------------------------
-    def _actualizacion_finalizada(self, simples, variados):
-        self._cargar_tabla(self.tabla_simples, simples)
-        self._cargar_tabla(self.tabla_variados, variados)
+        self.thread_aplicar.started.connect(self.worker_aplicar.ejecutar)
+        self.worker_aplicar.progreso.connect(self._actualizar_progreso)
+        self.worker_aplicar.terminado.connect(self._finalizar_aplicar)
+        self.worker_aplicar.error.connect(self._error_aplicar)
 
-        self.ui.progressB_barra.setValue(100)
-        self.ui.lb_blancocomentario.setText("Actualizando con Éxito")
+        self.worker_aplicar.terminado.connect(self.thread_aplicar.quit)
+        self.worker_aplicar.terminado.connect(self.worker_aplicar.deleteLater)
+        self.thread_aplicar.finished.connect(self.thread_aplicar.deleteLater)
 
-        QMessageBox.information(
-            self,
-            "Proceso completado",
-            "Productos actualizados correctamente"
-        )
+        self.thread_aplicar.start()
 
-    # ------------------------------------------------------
-    def _cargar_tabla(self, tabla, datos):
-        tabla.setRowCount(0)
+    def _actualizar_progreso(self, valor, mensaje):
+        self.ui.progressBar.setValue(valor)
+        self.ui.lblProcesando.setText(mensaje)
+        if self.dialogo:
+            self.dialogo.set_progreso(valor)
+            self.dialogo.set_mensaje(mensaje)
 
-        for fila in datos:
-            row = tabla.rowCount()
-            tabla.insertRow(row)
+    def _finalizar_proceso(self, modelo_simples, modelo_variados):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
 
-            for col, key in enumerate(self.HEADERS):
-                valor = fila.get(key, "")
-                tabla.setItem(row, col, QTableWidgetItem(str(valor)))
+        self.ui.tableSimples.setModel(modelo_simples)
+        self.ui.tableVariados.setModel(modelo_variados)
 
-    # ------------------------------------------------------
-    def exportar_excel(self):
+        self.ui.labelEstado.setText("Productos procesados correctamente")
+        self.ui.btnExportar.setEnabled(True)
+        self._procesado = True
+
+        mostrar_info("Productos procesados correctamente.")
+
+    def _finalizar_aplicar(self):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+        mostrar_info("Cambios aplicados correctamente.")
+
+    def _error_proceso(self, mensaje):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+        mostrar_error(mensaje)
+
+    def _error_aplicar(self, mensaje):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+        mostrar_error(mensaje)
+
+    # -------------------------------------------------
+    # EXPORTAR
+    # -------------------------------------------------
+    def _exportar(self):
         ruta, _ = QFileDialog.getSaveFileName(
             self,
-            "Exportar resultados",
+            "Exportar productos",
             "productos_actualizados.xlsx",
             "Excel (*.xlsx)"
         )
-
-        if not ruta:
-            return
-
-        try:
-            self.controlador.exportar_resultado(ruta)
-            QMessageBox.information(
-                self,
-                "Exportado",
-                "Archivo exportado correctamente"
-            )
-        except PyWooError as e:
-            QMessageBox.critical(self, "Error", str(e))
-
-    # ------------------------------------------------------
-    def _mostrar_error(self, mensaje):
-        QMessageBox.critical(self, "Error", mensaje)
-        self.ui.lb_blancocomentario.setText("Error en la actualización")
-        self.ui.progressB_barra.setValue(0)
+        if ruta:
+            try:
+                self.controlador.exportar_excel(ruta)
+                mostrar_info("Archivo exportado correctamente.")
+            except Exception as e:
+                mostrar_error(str(e))

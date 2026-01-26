@@ -15,119 +15,209 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit,
-    QPushButton, QSizePolicy, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QDialog, QFormLayout,
+    QFrame, QHBoxLayout, QLabel, QLineEdit,
+    QPushButton, QSizePolicy, QSpacerItem, QVBoxLayout,
+    QWidget)
 import iconos_rc
 
-class Ui_Dialog_urlWoocommerce(object):
-    def setupUi(self, Dialog_urlWoocommerce):
-        if not Dialog_urlWoocommerce.objectName():
-            Dialog_urlWoocommerce.setObjectName(u"Dialog_urlWoocommerce")
-        Dialog_urlWoocommerce.resize(552, 335)
+class Ui_CredencialesApiWoo(object):
+    def setupUi(self, CredencialesApiWoo):
+        if not CredencialesApiWoo.objectName():
+            CredencialesApiWoo.setObjectName(u"CredencialesApiWoo")
+        CredencialesApiWoo.resize(720, 420)
         icon = QIcon()
         icon.addFile(u":/assets/icons/actualizar.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        Dialog_urlWoocommerce.setWindowIcon(icon)
-        Dialog_urlWoocommerce.setStyleSheet(u"")
-        self.lb_nombre = QLabel(Dialog_urlWoocommerce)
-        self.lb_nombre.setObjectName(u"lb_nombre")
-        self.lb_nombre.setGeometry(QRect(10, 10, 531, 51))
-        self.lb_nombre.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 87 12pt \"Arial Black\";\n"
-"border-radius: 10px; \n"
-"padding: 8px 12px;")
-        self.lb_nombre.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
-        self.lb_fondoblanco = QLabel(Dialog_urlWoocommerce)
-        self.lb_fondoblanco.setObjectName(u"lb_fondoblanco")
-        self.lb_fondoblanco.setGeometry(QRect(10, 70, 529, 171))
-        self.lb_fondoblanco.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"\n"
-"")
-        self.pbt_guardar = QPushButton(Dialog_urlWoocommerce)
-        self.pbt_guardar.setObjectName(u"pbt_guardar")
-        self.pbt_guardar.setGeometry(QRect(30, 250, 100, 31))
-        self.pbt_guardar.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.pbt_conexion = QPushButton(Dialog_urlWoocommerce)
-        self.pbt_conexion.setObjectName(u"pbt_conexion")
-        self.pbt_conexion.setGeometry(QRect(180, 250, 172, 31))
-        self.pbt_conexion.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.pbt_salir = QPushButton(Dialog_urlWoocommerce)
-        self.pbt_salir.setObjectName(u"pbt_salir")
-        self.pbt_salir.setGeometry(QRect(410, 250, 100, 31))
-        self.pbt_salir.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.lb_blancocomentario = QLabel(Dialog_urlWoocommerce)
-        self.lb_blancocomentario.setObjectName(u"lb_blancocomentario")
-        self.lb_blancocomentario.setGeometry(QRect(10, 290, 529, 31))
-        self.lb_blancocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"\n"
-"")
-        self.lnEdit_url = QLineEdit(Dialog_urlWoocommerce)
-        self.lnEdit_url.setObjectName(u"lnEdit_url")
-        self.lnEdit_url.setGeometry(QRect(150, 100, 351, 21))
+        CredencialesApiWoo.setWindowIcon(icon)
+        self.verticalLayout_main = QVBoxLayout(CredencialesApiWoo)
+        self.verticalLayout_main.setObjectName(u"verticalLayout_main")
+        self.labelTitulo = QLabel(CredencialesApiWoo)
+        self.labelTitulo.setObjectName(u"labelTitulo")
         font = QFont()
-        font.setFamilies([u"Consolas"])
-        font.setPointSize(10)
-        self.lnEdit_url.setFont(font)
-        self.lb_url = QLabel(Dialog_urlWoocommerce)
-        self.lb_url.setObjectName(u"lb_url")
-        self.lb_url.setGeometry(QRect(40, 100, 61, 20))
-        self.lb_url.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.lb_url.setTextFormat(Qt.PlainText)
-        self.lb_csecret = QLabel(Dialog_urlWoocommerce)
-        self.lb_csecret.setObjectName(u"lb_csecret")
-        self.lb_csecret.setGeometry(QRect(40, 180, 101, 20))
-        self.lb_csecret.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.lnEdit_cs = QLineEdit(Dialog_urlWoocommerce)
-        self.lnEdit_cs.setObjectName(u"lnEdit_cs")
-        self.lnEdit_cs.setEnabled(True)
-        self.lnEdit_cs.setGeometry(QRect(150, 180, 351, 20))
-        self.lnEdit_cs.setFont(font)
-        self.lnEdit_cs.setEchoMode(QLineEdit.Password)
-        self.lb_ckey = QLabel(Dialog_urlWoocommerce)
-        self.lb_ckey.setObjectName(u"lb_ckey")
-        self.lb_ckey.setGeometry(QRect(40, 140, 91, 20))
-        self.lb_ckey.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.lnEdit_ck = QLineEdit(Dialog_urlWoocommerce)
-        self.lnEdit_ck.setObjectName(u"lnEdit_ck")
-        self.lnEdit_ck.setEnabled(True)
-        self.lnEdit_ck.setGeometry(QRect(150, 140, 351, 20))
-        self.lnEdit_ck.setFont(font)
-        self.lnEdit_ck.setEchoMode(QLineEdit.Password)
+        font.setPointSize(14)
+        font.setBold(True)
+        self.labelTitulo.setFont(font)
+        self.labelTitulo.setAlignment(Qt.AlignCenter)
 
-        self.retranslateUi(Dialog_urlWoocommerce)
+        self.verticalLayout_main.addWidget(self.labelTitulo)
 
-        QMetaObject.connectSlotsByName(Dialog_urlWoocommerce)
+        self.checkCredencialesCargadas = QCheckBox(CredencialesApiWoo)
+        self.checkCredencialesCargadas.setObjectName(u"checkCredencialesCargadas")
+        self.checkCredencialesCargadas.setEnabled(False)
+        self.checkCredencialesCargadas.setChecked(True)
+
+        self.verticalLayout_main.addWidget(self.checkCredencialesCargadas)
+
+        self.line = QFrame(CredencialesApiWoo)
+        self.line.setObjectName(u"line")
+        self.line.setFrameShape(QFrame.HLine)
+
+        self.verticalLayout_main.addWidget(self.line)
+
+        self.formLayout = QFormLayout()
+        self.formLayout.setObjectName(u"formLayout")
+        self.formLayout.setHorizontalSpacing(20)
+        self.formLayout.setVerticalSpacing(14)
+        self.labelStoreUrl = QLabel(CredencialesApiWoo)
+        self.labelStoreUrl.setObjectName(u"labelStoreUrl")
+
+        self.formLayout.setWidget(0, QFormLayout.ItemRole.LabelRole, self.labelStoreUrl)
+
+        self.lineEditStoreUrl = QLineEdit(CredencialesApiWoo)
+        self.lineEditStoreUrl.setObjectName(u"lineEditStoreUrl")
+
+        self.formLayout.setWidget(0, QFormLayout.ItemRole.FieldRole, self.lineEditStoreUrl)
+
+        self.labelConsumerKey = QLabel(CredencialesApiWoo)
+        self.labelConsumerKey.setObjectName(u"labelConsumerKey")
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.labelConsumerKey)
+
+        self.lineEditConsumerKey = QLineEdit(CredencialesApiWoo)
+        self.lineEditConsumerKey.setObjectName(u"lineEditConsumerKey")
+        self.lineEditConsumerKey.setEchoMode(QLineEdit.Password)
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.lineEditConsumerKey)
+
+        self.labelConsumerSecret = QLabel(CredencialesApiWoo)
+        self.labelConsumerSecret.setObjectName(u"labelConsumerSecret")
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.LabelRole, self.labelConsumerSecret)
+
+        self.lineEditConsumerSecret = QLineEdit(CredencialesApiWoo)
+        self.lineEditConsumerSecret.setObjectName(u"lineEditConsumerSecret")
+        self.lineEditConsumerSecret.setEchoMode(QLineEdit.Password)
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.lineEditConsumerSecret)
+
+
+        self.verticalLayout_main.addLayout(self.formLayout)
+
+        self.checkVerCredenciales = QCheckBox(CredencialesApiWoo)
+        self.checkVerCredenciales.setObjectName(u"checkVerCredenciales")
+
+        self.verticalLayout_main.addWidget(self.checkVerCredenciales)
+
+        self.horizontalLayoutButtons = QHBoxLayout()
+        self.horizontalLayoutButtons.setObjectName(u"horizontalLayoutButtons")
+        self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutButtons.addItem(self.spacerItem)
+
+        self.btnProbarConexion = QPushButton(CredencialesApiWoo)
+        self.btnProbarConexion.setObjectName(u"btnProbarConexion")
+
+        self.horizontalLayoutButtons.addWidget(self.btnProbarConexion)
+
+        self.btnCerrar = QPushButton(CredencialesApiWoo)
+        self.btnCerrar.setObjectName(u"btnCerrar")
+
+        self.horizontalLayoutButtons.addWidget(self.btnCerrar)
+
+        self.btnGuardar = QPushButton(CredencialesApiWoo)
+        self.btnGuardar.setObjectName(u"btnGuardar")
+
+        self.horizontalLayoutButtons.addWidget(self.btnGuardar)
+
+
+        self.verticalLayout_main.addLayout(self.horizontalLayoutButtons)
+
+
+        self.retranslateUi(CredencialesApiWoo)
+
+        QMetaObject.connectSlotsByName(CredencialesApiWoo)
     # setupUi
 
-    def retranslateUi(self, Dialog_urlWoocommerce):
-        Dialog_urlWoocommerce.setWindowTitle(QCoreApplication.translate("Dialog_urlWoocommerce", u"Credenciales API WooCommerce", None))
-        self.lb_nombre.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Credenciales API WooCommerce", None))
-        self.lb_fondoblanco.setText("")
-        self.pbt_guardar.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Guardar", None))
-        self.pbt_conexion.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Probar Conexi\u00f3n", None))
-        self.pbt_salir.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Salir", None))
-        self.lb_blancocomentario.setText("")
-        self.lnEdit_url.setPlaceholderText(QCoreApplication.translate("Dialog_urlWoocommerce", u"https://e-commerce.com", None))
-        self.lb_url.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"URL", None))
-        self.lb_csecret.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Consumer Secret ", None))
-        self.lnEdit_cs.setPlaceholderText(QCoreApplication.translate("Dialog_urlWoocommerce", u"cs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", None))
-        self.lb_ckey.setText(QCoreApplication.translate("Dialog_urlWoocommerce", u"Consumer Key ", None))
-        self.lnEdit_ck.setPlaceholderText(QCoreApplication.translate("Dialog_urlWoocommerce", u"ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", None))
+    def retranslateUi(self, CredencialesApiWoo):
+        CredencialesApiWoo.setWindowTitle(QCoreApplication.translate("CredencialesApiWoo", u"Credenciales API WooCommerce", None))
+        CredencialesApiWoo.setStyleSheet(QCoreApplication.translate("CredencialesApiWoo", u"\n"
+"QDialog {\n"
+"    background-color: #ffffff;\n"
+"    font-family: \"Segoe UI\";\n"
+"    font-size: 10pt;\n"
+"}\n"
+"\n"
+"QLabel {\n"
+"    color: #222222;\n"
+"}\n"
+"\n"
+"QLineEdit {\n"
+"    border: 1px solid #cfd8dc;\n"
+"    border-radius: 6px;\n"
+"    padding: 6px 8px;\n"
+"    background-color: #ffffff;\n"
+"}\n"
+"\n"
+"QLineEdit:focus {\n"
+"    border: 1px solid #2979ff;\n"
+"}\n"
+"\n"
+"QCheckBox {\n"
+"    spacing: 6px;\n"
+"}\n"
+"\n"
+"/* ---------- BOTONES (BASE) ---------- */\n"
+"QPushButton {\n"
+"    border-radius: 8px;\n"
+"    padding: 6px 16px;\n"
+"    font-weight: bold;\n"
+"    color: white;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N PRIMARIO - GUARDAR */\n"
+"QPushButton#btnGuardar {\n"
+"    background-color: #1e73f1;\n"
+"}\n"
+"QPushButton#btnGuardar:hover {\n"
+"    background-color: #1558c0;\n"
+"}\n"
+"QPushButton#btnGuardar:pressed {\n"
+"    background-color: #0d47a1;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N SECUNDARIO - PROBAR */\n"
+"QPushButton#btnProbarConexion {\n"
+"    background-color: #90caf9;\n"
+"    color: #0d47a1;\n"
+""
+                        "}\n"
+"QPushButton#btnProbarConexion:hover {\n"
+"    background-color: #64b5f6;\n"
+"}\n"
+"QPushButton#btnProbarConexion:pressed {\n"
+"    background-color: #42a5f5;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N CERRAR */\n"
+"QPushButton#btnCerrar {\n"
+"    background-color: #9e9e9e;\n"
+"}\n"
+"QPushButton#btnCerrar:hover {\n"
+"    background-color: #757575;\n"
+"}\n"
+"QPushButton#btnCerrar:pressed {\n"
+"    background-color: #616161;\n"
+"}\n"
+"\n"
+"/* ---------- SEPARADOR ---------- */\n"
+"QFrame#line {\n"
+"    color: #e0e0e0;\n"
+"}\n"
+"   ", None))
+        self.labelTitulo.setStyleSheet(QCoreApplication.translate("CredencialesApiWoo", u"\n"
+"background-color: #1e73f1;\n"
+"color: white;\n"
+"padding: 10px;\n"
+"border-radius: 8px;\n"
+"      ", None))
+        self.labelTitulo.setText(QCoreApplication.translate("CredencialesApiWoo", u"WooCommerce \u2013 Credenciales API", None))
+        self.checkCredencialesCargadas.setText(QCoreApplication.translate("CredencialesApiWoo", u"Credenciales cargadas.", None))
+        self.labelStoreUrl.setText(QCoreApplication.translate("CredencialesApiWoo", u"E-COMMERCE URL", None))
+        self.labelConsumerKey.setText(QCoreApplication.translate("CredencialesApiWoo", u"Consumer Key", None))
+        self.labelConsumerSecret.setText(QCoreApplication.translate("CredencialesApiWoo", u"Consumer Secret", None))
+        self.checkVerCredenciales.setText(QCoreApplication.translate("CredencialesApiWoo", u"Ver credenciales", None))
+        self.btnProbarConexion.setText(QCoreApplication.translate("CredencialesApiWoo", u"Probar conexi\u00f3n", None))
+        self.btnCerrar.setText(QCoreApplication.translate("CredencialesApiWoo", u"Cerrar", None))
+        self.btnGuardar.setText(QCoreApplication.translate("CredencialesApiWoo", u"Guardar", None))
     # retranslateUi
 

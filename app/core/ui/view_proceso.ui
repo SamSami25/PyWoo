@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ProcessDialog</class>
+ <widget class="QDialog" name="ProcessDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>520</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Procesando...</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+
+  <!-- ================= STYLE ================= -->
+  <property name="styleSheet">
+   <string>
+QDialog {
+    background-color: #ffffff;
+    font-family: Segoe UI;
+}
+
+/* ---------- HEADER ---------- */
+QFrame#frameHeader {
+    background-color: #1e73f1;
+    border-radius: 10px;
+}
+
+QLabel#lblTitulo {
+    font-size: 14pt;
+    font-weight: bold;
+    color: white;
+}
+
+QLabel#lblSubtitulo {
+    color: #e3f2fd;
+    margin-top: 4px;
+}
+
+/* ---------- PROGRESO ---------- */
+QProgressBar {
+    height: 22px;
+    border-radius: 10px;
+    background: #e0e0e0;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #4caf50;
+    border-radius: 10px;
+}
+
+/* ---------- LOG ---------- */
+QTextEdit#textLog {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 8px;
+    font-family: Consolas, monospace;
+    font-size: 9.5pt;
+}
+
+/* ---------- BOTON CANCELAR ---------- */
+QPushButton#btnCancelar {
+    background-color: #f44336;
+    color: white;
+    border-radius: 10px;
+    padding: 8px 22px;
+    font-weight: bold;
+}
+
+QPushButton#btnCancelar:hover {
+    background-color: #d32f2f;
+}
+
+QPushButton#btnCancelar:pressed {
+    background-color: #b71c1c;
+}
+
+/* ---------- TEXTOS ---------- */
+QLabel#lblMensaje {
+    color: #1e73f1;
+    font-weight: bold;
+}
+
+QLabel#lblNota {
+    color: #666666;
+    font-size: 9pt;
+}
+   </string>
+  </property>
+
+  <!-- ================= LAYOUT ================= -->
+  <layout class="QVBoxLayout" name="verticalLayoutMain">
+   <property name="spacing">
+    <number>14</number>
+   </property>
+
+   <!-- HEADER AZUL -->
+   <item>
+    <widget class="QFrame" name="frameHeader">
+     <layout class="QVBoxLayout">
+      <item>
+       <widget class="QLabel" name="lblTitulo">
+        <property name="text">
+         <string>Generando Reporte de Ventas</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblSubtitulo">
+        <property name="text">
+         <string>Procesando orden 1 de N...</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- PROGRESO -->
+   <item>
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
+   </item>
+
+   <!-- DETALLES -->
+   <item>
+    <widget class="QLabel">
+     <property name="text">
+      <string>Detalles del progreso:</string>
+     </property>
+    </widget>
+   </item>
+
+   <!-- LOG NEGRO -->
+   <item>
+    <widget class="QTextEdit" name="textLog">
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+
+   <!-- MENSAJE -->
+   <item>
+    <widget class="QLabel" name="lblMensaje">
+     <property name="text">
+      <string>Por favor espere mientras se procesa la información...</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+
+   <!-- BOTON -->
+   <item>
+    <layout class="QHBoxLayout">
+     <item>
+      <spacer>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCancelar">
+       <property name="text">
+        <string>Cancelar</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+
+   <!-- NOTA -->
+   <item>
+    <widget class="QLabel" name="lblNota">
+     <property name="text">
+      <string>Nota: Esta operación puede tomar varios minutos dependiendo de la cantidad de datos.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+
+  </layout>
+ </widget>
+
+ <resources/>
+ <connections/>
+</ui>

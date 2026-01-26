@@ -11,181 +11,245 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-    QCursor, QFont, QFontDatabase, QGradient,
-    QIcon, QImage, QKeySequence, QLinearGradient,
-    QPainter, QPalette, QPixmap, QRadialGradient,
-    QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QLabel, QMainWindow,
-    QMenu, QMenuBar, QProgressBar, QPushButton,
-    QSizePolicy, QStatusBar, QTabWidget, QWidget)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QHeaderView,
+    QLabel, QMainWindow, QProgressBar, QPushButton,
+    QSizePolicy, QSpacerItem, QTabWidget, QTableView,
+    QVBoxLayout, QWidget)
 import iconos_rc
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        if not MainWindow.objectName():
-            MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(700, 479)
+class Ui_Inventario(object):
+    def setupUi(self, Inventario):
+        if not Inventario.objectName():
+            Inventario.setObjectName(u"Inventario")
+        Inventario.resize(1150, 700)
         icon = QIcon()
         icon.addFile(u":/assets/icons/inventario.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        MainWindow.setWindowIcon(icon)
-        self.actionSistema = QAction(MainWindow)
-        self.actionSistema.setObjectName(u"actionSistema")
-        self.actionClaro = QAction(MainWindow)
-        self.actionClaro.setObjectName(u"actionClaro")
-        self.actionOscuro = QAction(MainWindow)
-        self.actionOscuro.setObjectName(u"actionOscuro")
-        self.actionReporte_Ventas = QAction(MainWindow)
-        self.actionReporte_Ventas.setObjectName(u"actionReporte_Ventas")
-        self.actionInventario = QAction(MainWindow)
-        self.actionInventario.setObjectName(u"actionInventario")
-        self.actionActualizaci_n_de_Productos = QAction(MainWindow)
-        self.actionActualizaci_n_de_Productos.setObjectName(u"actionActualizaci_n_de_Productos")
-        self.actionLista_de_Distribuidores = QAction(MainWindow)
-        self.actionLista_de_Distribuidores.setObjectName(u"actionLista_de_Distribuidores")
-        self.actionAcerca_de = QAction(MainWindow)
-        self.actionAcerca_de.setObjectName(u"actionAcerca_de")
-        self.actionWooCommerce = QAction(MainWindow)
-        self.actionWooCommerce.setObjectName(u"actionWooCommerce")
-        self.actionCredenciales_API = QAction(MainWindow)
-        self.actionCredenciales_API.setObjectName(u"actionCredenciales_API")
-        self.centralwidget = QWidget(MainWindow)
+        Inventario.setWindowIcon(icon)
+        self.centralwidget = QWidget(Inventario)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.progressB_barra = QProgressBar(self.centralwidget)
-        self.progressB_barra.setObjectName(u"progressB_barra")
-        self.progressB_barra.setGeometry(QRect(10, 170, 691, 23))
-        self.progressB_barra.setValue(24)
-        self.bt_volver = QPushButton(self.centralwidget)
-        self.bt_volver.setObjectName(u"bt_volver")
-        self.bt_volver.setGeometry(QRect(19, 380, 131, 51))
-        self.bt_volver.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.tb_productos = QTabWidget(self.centralwidget)
-        self.tb_productos.setObjectName(u"tb_productos")
-        self.tb_productos.setGeometry(QRect(10, 200, 681, 171))
-        self.tb_productos.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.tab = QWidget()
-        self.tab.setObjectName(u"tab")
-        self.tb_productos.addTab(self.tab, "")
-        self.tab_2 = QWidget()
-        self.tab_2.setObjectName(u"tab_2")
-        self.tb_productos.addTab(self.tab_2, "")
-        self.lb_fondoblanco = QLabel(self.centralwidget)
-        self.lb_fondoblanco.setObjectName(u"lb_fondoblanco")
-        self.lb_fondoblanco.setGeometry(QRect(10, 80, 681, 75))
-        self.lb_fondoblanco.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"\n"
-"")
-        self.lb_blancocomentario = QLabel(self.centralwidget)
-        self.lb_blancocomentario.setObjectName(u"lb_blancocomentario")
-        self.lb_blancocomentario.setGeometry(QRect(169, 380, 511, 41))
-        self.lb_blancocomentario.setStyleSheet(u"background-color: qlineargradient(spread:pad, x1:0.6875, y1:0.216, x2:1, y2:0, stop:1 rgba(255, 255, 255, 255));\n"
-"border-radius: 9px;\n"
-"padding: 10px 12px;\n"
-"\n"
-"")
-        self.lb_inventario = QLabel(self.centralwidget)
-        self.lb_inventario.setObjectName(u"lb_inventario")
-        self.lb_inventario.setGeometry(QRect(10, 10, 681, 58))
-        self.lb_inventario.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 87 12pt \"Arial Black\";\n"
-"border-radius: 10px; \n"
-"padding: 8px 12px;\n"
-"")
-        self.checkB_todos = QCheckBox(self.centralwidget)
-        self.checkB_todos.setObjectName(u"checkB_todos")
-        self.checkB_todos.setGeometry(QRect(50, 90, 141, 17))
-        self.checkB_todos.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.checkB_sin = QCheckBox(self.centralwidget)
-        self.checkB_sin.setObjectName(u"checkB_sin")
-        self.checkB_sin.setGeometry(QRect(50, 110, 141, 17))
-        self.checkB_sin.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.checkB_con = QCheckBox(self.centralwidget)
-        self.checkB_con.setObjectName(u"checkB_con")
-        self.checkB_con.setGeometry(QRect(50, 130, 141, 17))
-        self.checkB_con.setStyleSheet(u"font: 9pt \"Arial\";")
-        self.pbt_exportar = QPushButton(self.centralwidget)
-        self.pbt_exportar.setObjectName(u"pbt_exportar")
-        self.pbt_exportar.setGeometry(QRect(540, 90, 131, 51))
-        self.pbt_exportar.setStyleSheet(u"background-color: rgb(28, 115, 255);\n"
-"color: rgb(255, 255, 255);\n"
-"font: 75 10pt \"Arial Black\";\n"
-"border-radius: 8px;\n"
-"padding: 6px 12px;")
-        self.lb_fecha = QLabel(self.centralwidget)
-        self.lb_fecha.setObjectName(u"lb_fecha")
-        self.lb_fecha.setGeometry(QRect(530, 30, 141, 22))
-        self.lb_fecha.setStyleSheet(u"font: 9pt \"Consolas\";\n"
-"color: rgb(255, 255, 255);")
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QMenuBar(MainWindow)
-        self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 700, 21))
-        self.menuHerramientas = QMenu(self.menubar)
-        self.menuHerramientas.setObjectName(u"menuHerramientas")
-        self.menuM_dulos = QMenu(self.menubar)
-        self.menuM_dulos.setObjectName(u"menuM_dulos")
-        self.menuAyuda = QMenu(self.menubar)
-        self.menuAyuda.setObjectName(u"menuAyuda")
-        self.menuCredenciales_API = QMenu(self.menubar)
-        self.menuCredenciales_API.setObjectName(u"menuCredenciales_API")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(MainWindow)
-        self.statusbar.setObjectName(u"statusbar")
-        MainWindow.setStatusBar(self.statusbar)
+        self.layoutMain = QVBoxLayout(self.centralwidget)
+        self.layoutMain.setSpacing(16)
+        self.layoutMain.setObjectName(u"layoutMain")
+        self.labelTitulo = QLabel(self.centralwidget)
+        self.labelTitulo.setObjectName(u"labelTitulo")
 
-        self.menubar.addAction(self.menuCredenciales_API.menuAction())
-        self.menubar.addAction(self.menuM_dulos.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
-        self.menubar.addAction(self.menuAyuda.menuAction())
-        self.menuHerramientas.addAction(self.actionSistema)
-        self.menuHerramientas.addAction(self.actionClaro)
-        self.menuHerramientas.addAction(self.actionOscuro)
-        self.menuM_dulos.addAction(self.actionReporte_Ventas)
-        self.menuM_dulos.addAction(self.actionInventario)
-        self.menuM_dulos.addAction(self.actionActualizaci_n_de_Productos)
-        self.menuM_dulos.addAction(self.actionLista_de_Distribuidores)
-        self.menuAyuda.addAction(self.actionAcerca_de)
-        self.menuCredenciales_API.addAction(self.actionWooCommerce)
-        self.menuCredenciales_API.addAction(self.actionCredenciales_API)
+        self.layoutMain.addWidget(self.labelTitulo)
 
-        self.retranslateUi(MainWindow)
+        self.hboxLayout = QHBoxLayout()
+        self.hboxLayout.setObjectName(u"hboxLayout")
+        self.checkTodos = QCheckBox(self.centralwidget)
+        self.checkTodos.setObjectName(u"checkTodos")
 
-        QMetaObject.connectSlotsByName(MainWindow)
+        self.hboxLayout.addWidget(self.checkTodos)
+
+        self.checkSinStock = QCheckBox(self.centralwidget)
+        self.checkSinStock.setObjectName(u"checkSinStock")
+
+        self.hboxLayout.addWidget(self.checkSinStock)
+
+        self.checkConStock = QCheckBox(self.centralwidget)
+        self.checkConStock.setObjectName(u"checkConStock")
+
+        self.hboxLayout.addWidget(self.checkConStock)
+
+        self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.hboxLayout.addItem(self.spacerItem)
+
+        self.btnGenerar = QPushButton(self.centralwidget)
+        self.btnGenerar.setObjectName(u"btnGenerar")
+
+        self.hboxLayout.addWidget(self.btnGenerar)
+
+        self.btnExportar = QPushButton(self.centralwidget)
+        self.btnExportar.setObjectName(u"btnExportar")
+
+        self.hboxLayout.addWidget(self.btnExportar)
+
+
+        self.layoutMain.addLayout(self.hboxLayout)
+
+        self.layoutProgreso = QHBoxLayout()
+        self.layoutProgreso.setObjectName(u"layoutProgreso")
+        self.lblProcesando = QLabel(self.centralwidget)
+        self.lblProcesando.setObjectName(u"lblProcesando")
+        self.lblProcesando.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+
+        self.layoutProgreso.addWidget(self.lblProcesando)
+
+        self.progressBar = QProgressBar(self.centralwidget)
+        self.progressBar.setObjectName(u"progressBar")
+        self.progressBar.setValue(0)
+        self.progressBar.setTextVisible(True)
+
+        self.layoutProgreso.addWidget(self.progressBar)
+
+
+        self.layoutMain.addLayout(self.layoutProgreso)
+
+        self.tabWidget = QTabWidget(self.centralwidget)
+        self.tabWidget.setObjectName(u"tabWidget")
+        self.tabSimples = QWidget()
+        self.tabSimples.setObjectName(u"tabSimples")
+        self.vboxLayout = QVBoxLayout(self.tabSimples)
+        self.vboxLayout.setObjectName(u"vboxLayout")
+        self.tableSimples = QTableView(self.tabSimples)
+        self.tableSimples.setObjectName(u"tableSimples")
+
+        self.vboxLayout.addWidget(self.tableSimples)
+
+        self.tabWidget.addTab(self.tabSimples, "")
+        self.tabVariados = QWidget()
+        self.tabVariados.setObjectName(u"tabVariados")
+        self.vboxLayout1 = QVBoxLayout(self.tabVariados)
+        self.vboxLayout1.setObjectName(u"vboxLayout1")
+        self.tableVariados = QTableView(self.tabVariados)
+        self.tableVariados.setObjectName(u"tableVariados")
+
+        self.vboxLayout1.addWidget(self.tableVariados)
+
+        self.tabWidget.addTab(self.tabVariados, "")
+
+        self.layoutMain.addWidget(self.tabWidget)
+
+        self.hboxLayout1 = QHBoxLayout()
+        self.hboxLayout1.setObjectName(u"hboxLayout1")
+        self.btnVolver = QPushButton(self.centralwidget)
+        self.btnVolver.setObjectName(u"btnVolver")
+
+        self.hboxLayout1.addWidget(self.btnVolver)
+
+        self.labelEstado = QLabel(self.centralwidget)
+        self.labelEstado.setObjectName(u"labelEstado")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.labelEstado.sizePolicy().hasHeightForWidth())
+        self.labelEstado.setSizePolicy(sizePolicy)
+        self.labelEstado.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+        self.labelEstado.setWordWrap(True)
+
+        self.hboxLayout1.addWidget(self.labelEstado)
+
+        self.spacerItem1 = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.hboxLayout1.addItem(self.spacerItem1)
+
+
+        self.layoutMain.addLayout(self.hboxLayout1)
+
+        Inventario.setCentralWidget(self.centralwidget)
+
+        self.retranslateUi(Inventario)
+
+        self.tabWidget.setCurrentIndex(1)
+
+
+        QMetaObject.connectSlotsByName(Inventario)
     # setupUi
 
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Inventario", None))
-        self.actionSistema.setText(QCoreApplication.translate("MainWindow", u"Sistema", None))
-        self.actionClaro.setText(QCoreApplication.translate("MainWindow", u"Claro", None))
-        self.actionOscuro.setText(QCoreApplication.translate("MainWindow", u"Oscuro", None))
-        self.actionReporte_Ventas.setText(QCoreApplication.translate("MainWindow", u"Reporte Ventas", None))
-        self.actionInventario.setText(QCoreApplication.translate("MainWindow", u"Inventario", None))
-        self.actionActualizaci_n_de_Productos.setText(QCoreApplication.translate("MainWindow", u"Actualizaci\u00f3n de Productos", None))
-        self.actionLista_de_Distribuidores.setText(QCoreApplication.translate("MainWindow", u"Lista de Distribuidores", None))
-        self.actionAcerca_de.setText(QCoreApplication.translate("MainWindow", u"Acerca de", None))
-        self.actionWooCommerce.setText(QCoreApplication.translate("MainWindow", u"WooCommerce", None))
-        self.actionCredenciales_API.setText(QCoreApplication.translate("MainWindow", u"Credenciales API", None))
-        self.bt_volver.setText(QCoreApplication.translate("MainWindow", u"Volver al Men\u00fa", None))
-        self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Tab 1", None))
-        self.tb_productos.setTabText(self.tb_productos.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Tab 2", None))
-        self.lb_fondoblanco.setText("")
-        self.lb_blancocomentario.setText("")
-        self.lb_inventario.setText(QCoreApplication.translate("MainWindow", u"Inventario", None))
-        self.checkB_todos.setText(QCoreApplication.translate("MainWindow", u"Todos los Productos", None))
-        self.checkB_sin.setText(QCoreApplication.translate("MainWindow", u"Productos Sin Stock", None))
-        self.checkB_con.setText(QCoreApplication.translate("MainWindow", u"Productos Con Stock", None))
-        self.pbt_exportar.setText(QCoreApplication.translate("MainWindow", u"Exportar", None))
-        self.lb_fecha.setText("")
-        self.menuHerramientas.setTitle(QCoreApplication.translate("MainWindow", u"Herramientas", None))
-        self.menuM_dulos.setTitle(QCoreApplication.translate("MainWindow", u"M\u00f3dulos", None))
-        self.menuAyuda.setTitle(QCoreApplication.translate("MainWindow", u"Ayuda", None))
-        self.menuCredenciales_API.setTitle(QCoreApplication.translate("MainWindow", u"Credenciales API", None))
+    def retranslateUi(self, Inventario):
+        Inventario.setWindowTitle(QCoreApplication.translate("Inventario", u"Inventario", None))
+        Inventario.setStyleSheet(QCoreApplication.translate("Inventario", u"\n"
+"QMainWindow {\n"
+"    background-color: #f6f7fb;\n"
+"    font-family: Segoe UI;\n"
+"}\n"
+"\n"
+"/* ---------- T\u00cdTULO ---------- */\n"
+"QLabel#labelTitulo {\n"
+"    background-color: #1e73f1;\n"
+"    color: white;\n"
+"    font-size: 14pt;\n"
+"    font-weight: bold;\n"
+"    padding: 10px;\n"
+"    border-radius: 8px;\n"
+"}\n"
+"\n"
+"/* ---------- BOTONES (BASE) ---------- */\n"
+"QPushButton {\n"
+"    border-radius: 8px;\n"
+"    padding: 6px 14px;\n"
+"    font-weight: bold;\n"
+"    color: white;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N PRIMARIO */\n"
+"QPushButton#btnGenerar {\n"
+"    background-color: #1e73f1;\n"
+"}\n"
+"QPushButton#btnGenerar:hover {\n"
+"    background-color: #1558c0;\n"
+"}\n"
+"QPushButton#btnGenerar:pressed {\n"
+"    background-color: #0d47a1;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N EXPORTAR */\n"
+"QPushButton#btnExportar {\n"
+"    background-color: #90caf9;\n"
+"    color: #0d47a1;\n"
+"}\n"
+"QPushButton#btnExportar:hover {\n"
+"    background-color: #64b5f6;\n"
+"}\n"
+"QPushButton#btnExportar:pressed {\n"
+"    ba"
+                        "ckground-color: #42a5f5;\n"
+"}\n"
+"\n"
+"/* BOT\u00d3N VOLVER */\n"
+"QPushButton#btnVolver {\n"
+"    background-color: #9e9e9e;\n"
+"}\n"
+"QPushButton#btnVolver:hover {\n"
+"    background-color: #757575;\n"
+"}\n"
+"QPushButton#btnVolver:pressed {\n"
+"    background-color: #616161;\n"
+"}\n"
+"\n"
+"/* ---------- PROGRESO ---------- */\n"
+"QLabel#lblProcesando {\n"
+"    color: #555555;\n"
+"    font-weight: bold;\n"
+"}\n"
+"\n"
+"QProgressBar {\n"
+"    border-radius: 6px;\n"
+"    background: #e0e0e0;\n"
+"}\n"
+"QProgressBar::chunk {\n"
+"    background-color: #1e73f1;\n"
+"}\n"
+"\n"
+"/* ---------- MENSAJE ESTADO ---------- */\n"
+"QLabel#labelEstado {\n"
+"    background-color: #ffffff;\n"
+"    border-radius: 6px;\n"
+"    padding: 6px 10px;\n"
+"    color: #333333;\n"
+"}\n"
+"\n"
+"/* ---------- TABS ---------- */\n"
+"QTabWidget::pane {\n"
+"    border: none;\n"
+"}\n"
+"   ", None))
+        self.labelTitulo.setText(QCoreApplication.translate("Inventario", u"<html><head/><body><p>Inventario</p></body></html>", None))
+        self.checkTodos.setText(QCoreApplication.translate("Inventario", u"Todos los productos", None))
+        self.checkSinStock.setText(QCoreApplication.translate("Inventario", u"Productos sin stock", None))
+        self.checkConStock.setText(QCoreApplication.translate("Inventario", u"Productos con stock", None))
+        self.btnGenerar.setText(QCoreApplication.translate("Inventario", u"Generar", None))
+        self.btnExportar.setText(QCoreApplication.translate("Inventario", u"Exportar", None))
+        self.lblProcesando.setText(QCoreApplication.translate("Inventario", u"Procesando:", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSimples), QCoreApplication.translate("Inventario", u"Productos simples", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVariados), QCoreApplication.translate("Inventario", u"Productos variados", None))
+        self.btnVolver.setText(QCoreApplication.translate("Inventario", u"Volver al Men\u00fa", None))
+        self.labelEstado.setText("")
     # retranslateUi
 
