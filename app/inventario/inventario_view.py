@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QHeaderView
 from PySide6.QtCore import Qt, QThread
+from shiboken6 import isValid
 
 from app.inventario.ui.ui_view_inventario import Ui_Inventario
 from app.inventario.controlador_inventario import ControladorInventario
@@ -29,8 +30,6 @@ class InventarioView(QMainWindow):
         self._conectar()
 
     # -------------------------------------------------
-    # CONFIGURACIÓN
-    # -------------------------------------------------
     def _configurar_tablas(self):
         for tabla in (self.ui.tableSimples, self.ui.tableVariados):
             header = tabla.horizontalHeader()
@@ -43,12 +42,8 @@ class InventarioView(QMainWindow):
             self.ui.checkSinStock,
             self.ui.checkConStock,
         )
-
         for chk in checks:
-            chk.toggled.connect(
-                lambda checked, c=chk: self._exclusivo(c, checked)
-            )
-
+            chk.toggled.connect(lambda checked, c=chk: self._exclusivo(c, checked))
         self.ui.checkTodos.setChecked(True)
 
     def _configurar_estado(self):
@@ -57,39 +52,36 @@ class InventarioView(QMainWindow):
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
 
-    # -------------------------------------------------
-    # CHECKBOXES EXCLUSIVOS
+    def _conectar(self):
+        self.ui.btnGenerar.clicked.connect(self._generar)
+        self.ui.btnExportar.clicked.connect(self._exportar)
+        self.ui.btnVolver.clicked.connect(self._volver_menu)
+
     # -------------------------------------------------
     def _exclusivo(self, activo, checked):
         if not checked:
             return
-
-        for chk in (
-            self.ui.checkTodos,
-            self.ui.checkSinStock,
-            self.ui.checkConStock,
-        ):
+        for chk in (self.ui.checkTodos, self.ui.checkSinStock, self.ui.checkConStock):
             if chk is not activo:
                 chk.blockSignals(True)
                 chk.setChecked(False)
                 chk.blockSignals(False)
 
-    # -------------------------------------------------
-    # CONEXIONES
-    # -------------------------------------------------
-    def _conectar(self):
-        self.ui.btnGenerar.clicked.connect(self._generar)
-        self.ui.btnExportar.clicked.connect(self._exportar)
-        self.ui.btnVolver.clicked.connect(self._cerrar)
+    def _volver_menu(self):
+        parent = self.parent()
+        self.close()
+        if parent:
+            parent.show()
 
-    # -------------------------------------------------
-    # CONTROL DE HILO
     # -------------------------------------------------
     def _detener_hilo(self):
-        if self.thread and self.thread.isRunning():
-            self.thread.quit()
-            self.thread.wait()
-
+        if self.thread and isValid(self.thread):
+            try:
+                if self.thread.isRunning():
+                    self.thread.quit()
+                    self.thread.wait()
+            except RuntimeError:
+                pass
         self.thread = None
         self.worker = None
 
@@ -97,12 +89,6 @@ class InventarioView(QMainWindow):
         self._detener_hilo()
         event.accept()
 
-    def _cerrar(self):
-        self._detener_hilo()
-        self.close()
-
-    # -------------------------------------------------
-    # GENERAR INVENTARIO (ASYNC)
     # -------------------------------------------------
     def _generar(self):
         self._detener_hilo()
@@ -136,7 +122,6 @@ class InventarioView(QMainWindow):
     def _actualizar_progreso(self, valor, mensaje):
         self.ui.progressBar.setValue(valor)
         self.ui.lblProcesando.setText(mensaje)
-
         if self.dialogo:
             self.dialogo.set_progreso(valor)
             self.dialogo.set_mensaje(mensaje)
@@ -153,20 +138,18 @@ class InventarioView(QMainWindow):
         self.ui.btnExportar.setEnabled(True)
         self._generado = True
 
-        mostrar_info("Inventario generado correctamente.")
+        mostrar_info("Inventario generado correctamente.", self)
 
     def _error(self, mensaje):
         if self.dialogo:
             self.dialogo.close()
             self.dialogo = None
-        mostrar_error(mensaje)
+        mostrar_error(mensaje, self)
 
-    # -------------------------------------------------
-    # EXPORTAR
     # -------------------------------------------------
     def _exportar(self):
         if not self._generado:
-            mostrar_error("Debe generar el inventario primero.")
+            mostrar_error("Debe generar el inventario primero.", self)
             return
 
         ruta, _ = QFileDialog.getSaveFileName(
@@ -179,13 +162,10 @@ class InventarioView(QMainWindow):
         if ruta:
             try:
                 self.controlador.exportar_excel(ruta)
-                mostrar_info("Archivo exportado correctamente.")
+                mostrar_info("Archivo exportado correctamente.", self)
             except Exception as e:
-                mostrar_error(str(e))
+                mostrar_error(str(e), self)
 
-    # -------------------------------------------------
-    # UTILIDADES
-    # -------------------------------------------------
     def _obtener_filtro(self):
         if self.ui.checkSinStock.isChecked():
             return "sin_stock"

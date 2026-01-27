@@ -7,7 +7,6 @@ from app.core.ui.ui_proceso import Ui_ProcessDialog
 class ProcessDialog(QDialog):
     """
     Diálogo de progreso reutilizable para todo el sistema.
-    NO depende de ningún módulo de negocio.
     """
 
     def __init__(self, parent=None):
@@ -16,14 +15,29 @@ class ProcessDialog(QDialog):
         self.ui = Ui_ProcessDialog()
         self.ui.setupUi(self)
 
+        # 🔒 Modal real (bloquea la ventana padre)
         self.setWindowModality(Qt.ApplicationModal)
 
-        self.ui.progressBar.setValue(0)
+        # 🎨 FORZAR VISIBILIDAD DEL HEADER
+        self.ui.frameHeader.setMinimumHeight(90)
+        self.ui.lblTitulo.setMinimumHeight(32)
+
+        # 🎯 Alineación clara
+        self.ui.lblTitulo.setAlignment(Qt.AlignCenter)
+        self.ui.lblSubtitulo.setAlignment(Qt.AlignCenter)
+
+        # Estado inicial
+        self.reset()
+
+        # Cancelar solo cierra el diálogo (no mata procesos)
         self.ui.btnCancelar.clicked.connect(self.close)
 
     # ------------------------
     # API pública
     # ------------------------
+    def set_titulo(self, texto: str):
+        self.ui.lblTitulo.setText(texto)
+
     def set_progreso(self, valor: int):
         self.ui.progressBar.setValue(valor)
 
@@ -34,3 +48,4 @@ class ProcessDialog(QDialog):
     def reset(self):
         self.ui.progressBar.setValue(0)
         self.ui.textLog.clear()
+        self.ui.lblSubtitulo.setText("")

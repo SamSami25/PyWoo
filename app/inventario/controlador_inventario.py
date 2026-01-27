@@ -3,8 +3,6 @@ from PySide6.QtGui import QFont
 import xlsxwriter
 
 from app.core.cliente_woocommerce import ClienteWooCommerce
-from app.menu.menu_view import MenuPrincipalView
-
 
 HEADERS = [
     "SKU",
@@ -15,9 +13,22 @@ HEADERS = [
     "ESTADO",
 ]
 
+# Claves REALES del diccionario (MISMO ORDEN)
+COLUMN_KEYS = [
+    "sku",
+    "nombre",
+    "categoria",
+    "stock",
+    "precio",
+    "estado",
+]
 
+
+# =====================================================
+# MODELO DE TABLA (DICT-SAFE)
+# =====================================================
 class ModeloTablaInventario(QAbstractTableModel):
-    def __init__(self, datos):
+    def __init__(self, datos: list[dict]):
         super().__init__()
         self._datos = datos
 
@@ -25,14 +36,20 @@ class ModeloTablaInventario(QAbstractTableModel):
         return len(self._datos)
 
     def columnCount(self, parent=None):
-        return len(HEADERS)
+        return len(COLUMN_KEYS)
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
 
+        fila = self._datos[index.row()]
+        clave = COLUMN_KEYS[index.column()]
+
         if role == Qt.DisplayRole:
-            return self._datos[index.row()][index.column()]
+            return str(fila.get(clave, ""))
+
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
 
         return None
 
@@ -46,15 +63,28 @@ class ModeloTablaInventario(QAbstractTableModel):
                 return f
             if role == Qt.TextAlignmentRole:
                 return Qt.AlignCenter
+
         return None
 
 
+# =====================================================
+# CONTROLADOR
+# =====================================================
 class ControladorInventario:
     def __init__(self):
         self.cliente = ClienteWooCommerce()
         self._simples = []
         self._variados = []
 
+    @property
+    def simples(self):
+        return self._simples
+
+    @property
+    def variados(self):
+        return self._variados
+
+    # ---------------- GENERAR ----------------
     def generar_inventario(self, filtro, callback_progreso=None):
         productos = self.cliente.obtener_productos()
         total = len(productos)
@@ -65,7 +95,6 @@ class ControladorInventario:
         for i, p in enumerate(productos, start=1):
             stock = int(p.get("stock_quantity") or 0)
 
-            # -------- FILTRO CORRECTO --------
             if filtro == "sin_stock" and stock > 0:
                 continue
             if filtro == "con_stock" and stock <= 0:
@@ -109,8 +138,8 @@ class ControladorInventario:
         cell_fmt = workbook.add_format({"border": 1})
 
         for nombre, datos in (
-            ("Productos Simples", self.simples),
-            ("Productos Variados", self.variados),
+            ("Productos Simples", self._simples),
+            ("Productos Variados", self._variados),
         ):
             ws = workbook.add_worksheet(nombre)
 
@@ -118,8 +147,8 @@ class ControladorInventario:
                 ws.write(0, col, h, header_fmt)
 
             for row, fila in enumerate(datos, start=1):
-                for col, val in enumerate(fila):
-                    ws.write(row, col, val, cell_fmt)
+                for col, key in enumerate(COLUMN_KEYS):
+                    ws.write(row, col, fila.get(key, ""), cell_fmt)
 
             ws.autofilter(0, 0, row, len(HEADERS) - 1)
             ws.freeze_panes(1, 0)

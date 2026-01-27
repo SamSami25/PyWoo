@@ -1,152 +1,147 @@
-from PySide6.QtCore import QAbstractTableModel, Qt
-from PySide6.QtGui import QFont
-from openpyxl import Workbook
-from openpyxl.styles import Font as ExcelFont
-from openpyxl.utils import get_column_letter
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QHeaderView
+from PySide6.QtCore import QThread, QDate
+from shiboken6 import isValid
 
-from app.core.cliente_woocommerce import ClienteWooCommerce
-from app.menu.menu_view import MenuPrincipalView
+from app.reporte_ventas.ui.ui_view_reporte_ventas import Ui_ReporteVentas
+from app.reporte_ventas.controlador_reporte_ventas import ControladorReporteVentas
+from app.reporte_ventas.worker_reporte_ventas import WorkerReporteVentas
 
-
-HEADERS = [
-    "FECHA", "CLIENTE", "SUBTOTAL", "ENVÍO", "IVA", "DESCUENTO", "TOTAL",
-    "UTILIDAD", "ESTADO", "NOTAS", "PEDIDO", "IDENTIFICACIÓN",
-    "CORREO", "TELÉFONO", "DIRECCIÓN", "CIUDAD", "CAJERO"
-]
-
-ESTADOS_ES = {
-    "pending": "Pendiente",
-    "processing": "Procesando",
-    "on-hold": "En espera",
-    "completed": "Completado",
-    "cancelled": "Cancelado",
-    "refunded": "Reembolsado",
-    "failed": "Fallido",
-}
+from app.core.proceso import ProcessDialog
+from app.core.dialogos import mostrar_error, mostrar_info
 
 
-class ModeloTablaReporteVentas(QAbstractTableModel):
-    def __init__(self, datos):
-        super().__init__()
-        self._datos = datos
+class ReporteVentasView(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-    def rowCount(self, parent=None):
-        return len(self._datos)
+        self.ui = Ui_ReporteVentas()
+        self.ui.setupUi(self)
 
-    def columnCount(self, parent=None):
-        return len(HEADERS)
+        self.controlador = ControladorReporteVentas()
+        self._generado = False
 
-    def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid():
-            return None
+        self.thread = None
+        self.worker = None
+        self.dialogo = None
 
-        if role == Qt.DisplayRole:
-            return self._datos[index.row()][index.column()]
+        self._configurar()
+        self._conectar()
 
-        if role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
+    # -------------------------------------------------
+    def _configurar(self):
+        hoy = QDate.currentDate()
+        self.ui.dateDesde.setDate(hoy)
+        self.ui.dateHasta.setDate(hoy)
 
-        return None
+        header = self.ui.tableSimples.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setStretchLastSection(True)
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if orientation == Qt.Horizontal:
-            if role == Qt.DisplayRole:
-                return HEADERS[section]
-            if role == Qt.FontRole:
-                f = QFont()
-                f.setBold(True)
-                return f
-            if role == Qt.TextAlignmentRole:
-                return Qt.AlignCenter
-        return None
+        self.ui.btnExportar.setEnabled(False)
+        self.ui.labelEstado.setText("")
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
 
+    def _conectar(self):
+        self.ui.btnGenerar.clicked.connect(self._generar)
+        self.ui.btnExportar.clicked.connect(self._exportar)
+        self.ui.btnVolver.clicked.connect(self._volver_menu)
 
-class ControladorReporteVentas:
-    def __init__(self):
-        self.cliente = ClienteWooCommerce()
-        self._datos = []
+    def _volver_menu(self):
+        parent = self.parent()
+        self.close()
+        if parent:
+            parent.show()
 
-    def _obtener_cajero(self, pedido):
-        for meta in pedido.get("meta_data", []):
-            key = meta.get("key", "").lower()
-            if key in ("cajero", "cashier", "vendedor", "pos_user"):
-                return str(meta.get("value", "") or "")
-        return ""
+    # -------------------------------------------------
+    def _detener_hilo(self):
+        if self.thread and isValid(self.thread):
+            try:
+                if self.thread.isRunning():
+                    self.thread.quit()
+                    self.thread.wait()
+            except RuntimeError:
+                pass
+        self.thread = None
+        self.worker = None
 
-    def generar_reporte(self, desde, hasta, callback_progreso=None):
-        pedidos = self.cliente.obtener_pedidos(
-            desde=desde.isoformat(),
-            hasta=hasta.isoformat(),
-            per_page=100
+    def closeEvent(self, event):
+        self._detener_hilo()
+        event.accept()
+
+    # -------------------------------------------------
+    def _generar(self):
+        self._detener_hilo()
+
+        desde = self.ui.dateDesde.date().toPython()
+        hasta = self.ui.dateHasta.date().toPython()
+
+        self._generado = False
+        self.ui.btnExportar.setEnabled(False)
+        self.ui.tableSimples.setModel(None)
+
+        self.dialogo = ProcessDialog(self)
+        self.dialogo.ui.lblTitulo.setText("Generando Reporte de Ventas")
+        self.dialogo.reset()
+        self.dialogo.set_mensaje("Generando reporte...")
+        self.dialogo.show()
+
+        self.thread = QThread(self)
+        self.worker = WorkerReporteVentas(self.controlador, desde, hasta)
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.ejecutar)
+        self.worker.progreso.connect(self._actualizar_progreso)
+        self.worker.terminado.connect(self._finalizar)
+        self.worker.error.connect(self._error)
+
+        self.worker.terminado.connect(self.thread.quit)
+        self.worker.terminado.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+    def _actualizar_progreso(self, valor, mensaje):
+        self.ui.progressBar.setValue(valor)
+        self.ui.lblProcesando.setText(mensaje)
+        if self.dialogo:
+            self.dialogo.set_progreso(valor)
+            self.dialogo.set_mensaje(mensaje)
+
+    def _finalizar(self, modelo):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+
+        self.ui.tableSimples.setModel(modelo)
+        self.ui.labelEstado.setText("Reporte generado correctamente")
+        self.ui.btnExportar.setEnabled(True)
+        self._generado = True
+
+        mostrar_info("Reporte de ventas generado correctamente.")
+
+    def _error(self, mensaje):
+        if self.dialogo:
+            self.dialogo.close()
+            self.dialogo = None
+        mostrar_error(mensaje)
+
+    # -------------------------------------------------
+    def _exportar(self):
+        if not self._generado:
+            mostrar_error("Debe generar el reporte primero.")
+            return
+
+        ruta, _ = QFileDialog.getSaveFileName(
+            self,
+            "Exportar reporte",
+            "reporte_ventas.xlsx",
+            "Excel (*.xlsx)"
         )
 
-        self._datos.clear()
-        total = len(pedidos) or 1
-
-        for i, pedido in enumerate(pedidos, start=1):
-            self._datos.append(self._procesar_pedido(pedido))
-
-            if callback_progreso:
-                callback_progreso(
-                    int((i / total) * 100),
-                    f"Procesando orden {i} de {total}"
-                )
-
-        return ModeloTablaReporteVentas(self._datos)
-
-    def _procesar_pedido(self, pedido):
-        billing = pedido.get("billing", {})
-        shipping = pedido.get("shipping", {})
-
-        subtotal = float(pedido.get("subtotal", 0))
-        total = float(pedido.get("total", 0))
-        iva = float(pedido.get("total_tax", 0))
-        envio = float(pedido.get("shipping_total", 0))
-        descuento = float(pedido.get("discount_total", 0))
-
-        utilidad = round(total - descuento, 2)
-
-        estado = ESTADOS_ES.get(pedido.get("status"), pedido.get("status", ""))
-
-        direccion = " ".join(filter(None, [
-            shipping.get("address_1", ""),
-            shipping.get("address_2", "")
-        ]))
-
-        return [
-            pedido.get("date_created", "")[:10],
-            f"{billing.get('first_name', '')} {billing.get('last_name', '')}".strip(),
-            round(subtotal, 2),
-            round(envio, 2),
-            round(iva, 2),
-            round(descuento, 2),
-            round(total, 2),
-            utilidad,
-            estado,
-            pedido.get("customer_note", ""),
-            pedido.get("number", ""),
-            billing.get("company", ""),
-            billing.get("email", ""),
-            billing.get("phone", ""),
-            direccion,
-            shipping.get("city", ""),
-            self._obtener_cajero(pedido),
-        ]
-
-    def exportar_excel(self, ruta):
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Reporte Ventas"
-
-        for col, header in enumerate(HEADERS, start=1):
-            cell = ws.cell(row=1, column=col, value=header)
-            cell.font = ExcelFont(bold=True)
-
-        for row_idx, fila in enumerate(self._datos, start=2):
-            for col_idx, valor in enumerate(fila, start=1):
-                ws.cell(row=row_idx, column=col_idx, value=valor)
-
-        for col in range(1, len(HEADERS) + 1):
-            ws.column_dimensions[get_column_letter(col)].width = 20
-
-        wb.save(ruta)
+        if ruta:
+            try:
+                self.controlador.exportar_excel(ruta)
+                mostrar_info("Archivo exportado correctamente.")
+            except Exception as e:
+                mostrar_error(str(e))

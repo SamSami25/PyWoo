@@ -3,7 +3,6 @@ from PySide6.QtGui import QFont
 import xlsxwriter
 
 from app.core.cliente_woocommerce import ClienteWooCommerce
-from app.menu.menu_view import MenuPrincipalView
 
 
 HEADERS_INTERNAL = [

@@ -115,26 +115,26 @@ class Ui_ReporteVentas(object):
 
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
-        self.tabSimples = QWidget()
-        self.tabSimples.setObjectName(u"tabSimples")
-        self.vboxLayout = QVBoxLayout(self.tabSimples)
+        self.tabPedidos = QWidget()
+        self.tabPedidos.setObjectName(u"tabPedidos")
+        self.vboxLayout = QVBoxLayout(self.tabPedidos)
         self.vboxLayout.setObjectName(u"vboxLayout")
-        self.tableSimples = QTableView(self.tabSimples)
+        self.tableSimples = QTableView(self.tabPedidos)
         self.tableSimples.setObjectName(u"tableSimples")
 
         self.vboxLayout.addWidget(self.tableSimples)
 
-        self.tabWidget.addTab(self.tabSimples, "")
-        self.tabVariados = QWidget()
-        self.tabVariados.setObjectName(u"tabVariados")
-        self.vboxLayout1 = QVBoxLayout(self.tabVariados)
+        self.tabWidget.addTab(self.tabPedidos, "")
+        self.widget = QWidget()
+        self.widget.setObjectName(u"widget")
+        self.vboxLayout1 = QVBoxLayout(self.widget)
         self.vboxLayout1.setObjectName(u"vboxLayout1")
-        self.tableVariados = QTableView(self.tabVariados)
+        self.tableVariados = QTableView(self.widget)
         self.tableVariados.setObjectName(u"tableVariados")
 
         self.vboxLayout1.addWidget(self.tableVariados)
 
-        self.tabWidget.addTab(self.tabVariados, "")
+        self.tabWidget.addTab(self.widget, "")
 
         self.layoutMain.addWidget(self.tabWidget)
 
@@ -167,6 +167,9 @@ class Ui_ReporteVentas(object):
         ReporteVentas.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(ReporteVentas)
+
+        self.tabWidget.setCurrentIndex(1)
+
 
         QMetaObject.connectSlotsByName(ReporteVentas)
     # setupUi
@@ -267,8 +270,8 @@ class Ui_ReporteVentas(object):
         self.lineSalida.setPlaceholderText(QCoreApplication.translate("ReporteVentas", u"ventas_DESDE_HASTA.xlsx", None))
         self.btnExportar.setText(QCoreApplication.translate("ReporteVentas", u"Exportar", None))
         self.lblProcesando.setText(QCoreApplication.translate("ReporteVentas", u"Procesando:", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSimples), QCoreApplication.translate("ReporteVentas", u"Productos Simples", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVariados), QCoreApplication.translate("ReporteVentas", u"Productos Variados", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabPedidos), QCoreApplication.translate("ReporteVentas", u"Pedidos", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.widget), "")
         self.btnVolver.setText(QCoreApplication.translate("ReporteVentas", u"Volver al Men\u00fa", None))
         self.labelEstado.setText("")
     # retranslateUi

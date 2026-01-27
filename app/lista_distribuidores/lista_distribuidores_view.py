@@ -40,10 +40,21 @@ class ListaDistribuidoresView(QMainWindow):
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
 
+    # -------------------------------------------------
+    # CONEXIONES
+    # -------------------------------------------------
     def _conectar(self):
         self.ui.btnGenerar.clicked.connect(self._generar)
         self.ui.btnExportar.clicked.connect(self._exportar)
-        self.ui.btnVolver.clicked.connect(self._cerrar)
+        self.ui.btnVolver.clicked.connect(self._volver_menu)
+
+    # ✅ VOLVER AL MENÚ (FORMA CORRECTA)
+    def _volver_menu(self):
+        self._detener_hilo()
+        parent = self.parent()
+        self.hide()
+        if parent:
+            parent.show()
 
     # -------------------------------------------------
     # CONTROL DE HILO
@@ -56,13 +67,11 @@ class ListaDistribuidoresView(QMainWindow):
         self.thread = None
         self.worker = None
 
+    # ❌ NO cerrar la app
     def closeEvent(self, event):
         self._detener_hilo()
-        event.accept()
-
-    def _cerrar(self):
-        self._detener_hilo()
-        self.close()
+        event.ignore()
+        self.hide()
 
     # -------------------------------------------------
     # GENERAR LISTA (ASYNC)
@@ -72,9 +81,10 @@ class ListaDistribuidoresView(QMainWindow):
         self._limpiar_estado()
 
         self.dialogo = ProcessDialog(self)
+        self.dialogo.setModal(True)
         self.dialogo.ui.lblTitulo.setText("Generando Lista de Distribuidores")
         self.dialogo.reset()
-        self.dialogo.set_mensaje("Generando lista...")
+        self.dialogo.set_mensaje("Generando lista de distribuidores...")
         self.dialogo.show()
 
         self.thread = QThread(self)
@@ -95,6 +105,7 @@ class ListaDistribuidoresView(QMainWindow):
     def _actualizar_progreso(self, valor, mensaje):
         self.ui.progressBar.setValue(valor)
         self.ui.lblProcesando.setText(mensaje)
+
         if self.dialogo:
             self.dialogo.set_progreso(valor)
             self.dialogo.set_mensaje(mensaje)
@@ -129,7 +140,7 @@ class ListaDistribuidoresView(QMainWindow):
 
         ruta, _ = QFileDialog.getSaveFileName(
             self,
-            "Exportar lista",
+            "Exportar lista de distribuidores",
             "lista_distribuidores.xlsx",
             "Excel (*.xlsx)"
         )

@@ -1,34 +1,33 @@
-# app/core/configuracion.py
-
 import os
-from dotenv import load_dotenv, set_key
+import json
+from app.core.rutas import obtener_directorio_app
 from app.core.excepciones import ConfiguracionError
-
-ENV_PATH = ".env"
 
 
 class Configuracion:
+    ARCHIVO = "credenciales.json"
+
     def __init__(self):
-        load_dotenv(ENV_PATH)
+        self.ruta = os.path.join(obtener_directorio_app(), self.ARCHIVO)
 
-    def obtener_credenciales(self) -> dict:
-        url = os.getenv("WC_URL")
-        ck = os.getenv("WC_KEY")
-        cs = os.getenv("WC_SECRET")
+    def obtener_credenciales(self):
+        if not os.path.exists(self.ruta):
+            raise ConfiguracionError("Credenciales no configuradas")
 
-        if not all([url, ck, cs]):
-            raise ConfiguracionError("Credenciales de WooCommerce incompletas.")
+        with open(self.ruta, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-        return {
-            "url": url,
-            "consumer_key": ck,
-            "consumer_secret": cs,
+        if not data.get("url") or not data.get("consumer_key") or not data.get("consumer_secret"):
+            raise ConfiguracionError("Credenciales incompletas")
+
+        return data
+
+    def guardar_credenciales(self, url, consumer_key, consumer_secret):
+        data = {
+            "url": url.strip(),
+            "consumer_key": consumer_key.strip(),
+            "consumer_secret": consumer_secret.strip()
         }
 
-    def guardar_credenciales(self, url: str, ck: str, cs: str):
-        if not all([url, ck, cs]):
-            raise ConfiguracionError("No se permiten credenciales vacías.")
-
-        set_key(ENV_PATH, "WC_URL", url)
-        set_key(ENV_PATH, "WC_KEY", ck)
-        set_key(ENV_PATH, "WC_SECRET", cs)
+        with open(self.ruta, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)

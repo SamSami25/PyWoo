@@ -24,6 +24,25 @@ QMainWindow {
     font-family: Segoe UI;
 }
 
+QMenuBar {
+    background-color: #f2f2f2;
+    color: black;
+}
+
+QMenuBar::item:selected {
+    background-color: #d6d6d6;
+}
+
+QMenu {
+    background-color: white;
+    color: black;
+}
+
+QMenu::item:selected {
+    background-color: #e3f2fd;
+}
+
+
 /* ================= BOTONES BASE ================= */
 QPushButton {
     font-size: 11pt;
