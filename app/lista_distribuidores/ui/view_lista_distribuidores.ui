@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Lista de Distribuidores</string>
+   <string>Lista de Productos para Distribuidores</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../../iconos.qrc">
@@ -112,7 +112,7 @@ QTabWidget::pane {
     <item>
      <widget class="QLabel" name="labelTitulo">
       <property name="text">
-       <string>Lista de Distribuidores</string>
+       <string>Lista de Productos para Distribuidores</string>
       </property>
      </widget>
     </item>

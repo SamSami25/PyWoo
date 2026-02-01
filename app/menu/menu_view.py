@@ -1,9 +1,10 @@
-from PySide6.QtWidgets import QMainWindow, QApplication, QMessageBox
+# app/menu/menu_view.py
+from __future__ import annotations
+
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QDialog
+from PySide6.QtCore import QEvent
 
 from app.menu.ui.ui_view_menu import Ui_MenuPrincipal
-
-from app.core.temas import (aplicar_tema_claro, aplicar_tema_oscuro, aplicar_tema_sistema)
-
 from app.core.configuracion import Configuracion
 from app.core.excepciones import ConfiguracionError
 from app.core.credenciales_view import CredencialesApiWooView
@@ -17,65 +18,33 @@ class MenuPrincipalView(QMainWindow):
         self.ui = Ui_MenuPrincipal()
         self.ui.setupUi(self)
 
-        self.setCentralWidget(self.ui.centralwidget)
-        self.setMenuBar(self.ui.menubar)
-
-        self.menuBar().setVisible(True)
-        self.menuBar().raise_()
-
-
-        aplicar_tema_sistema(QApplication.instance())
-
         self.ventana = None
-
         self._conectar_eventos()
 
-    # -------------------------------------------------
-    # CONEXIONES
-    # -------------------------------------------------
     def _conectar_eventos(self):
-        # -------- BOTONES --------
         self.ui.btnVentas.clicked.connect(self._ventas)
         self.ui.btnInventario.clicked.connect(self._inventario)
         self.ui.btnActualizarProductos.clicked.connect(self._actualizar)
         self.ui.btnDistribuidores.clicked.connect(self._distribuidores)
 
-        # -------- MENÚ SUPERIOR --------
         self.ui.actionCredenciales_API.triggered.connect(self._abrir_credenciales)
-
         self.ui.actionReporte_Ventas.triggered.connect(self._ventas)
         self.ui.actionInventario.triggered.connect(self._inventario)
         self.ui.actionActualizar_Productos.triggered.connect(self._actualizar)
         self.ui.actionLista_de_Distribuidores.triggered.connect(self._distribuidores)
-
-        # -------- TEMAS --------
-        self.ui.actionSistema.triggered.connect(
-            lambda: aplicar_tema_sistema(QApplication.instance())
-        )
-        self.ui.actionClaro.triggered.connect(
-            lambda: aplicar_tema_claro(QApplication.instance())
-        )
-        self.ui.actionOscuro.triggered.connect(
-            lambda: aplicar_tema_oscuro(QApplication.instance())
-        )
-
-        # -------- AYUDA --------
         self.ui.actionAcerca_de.triggered.connect(self._acerca_de)
 
-    # -------------------------------------------------
-    # CREDENCIALES
-    # -------------------------------------------------
     def _abrir_credenciales(self):
         dlg = CredencialesApiWooView(self)
         dlg.exec()
 
-    def _asegurar_credenciales(self):
+    def _asegurar_credenciales(self) -> bool:
         try:
             Configuracion().obtener_credenciales()
             return True
         except ConfiguracionError:
             dlg = CredencialesApiWooView(self)
-            if dlg.exec() == dlg.Accepted:
+            if dlg.exec() == QDialog.Accepted:
                 try:
                     Configuracion().obtener_credenciales()
                     return True
@@ -84,28 +53,21 @@ class MenuPrincipalView(QMainWindow):
                     return False
             return False
 
-    # -------------------------------------------------
-    # NAVEGACIÓN
-    # -------------------------------------------------
     def _abrir_modulo(self, VentanaClase):
         if not self._asegurar_credenciales():
             return
 
         if self.ventana:
-            try:
-                self.ventana.close()
-            except Exception:
-                pass
+            self.ventana.close()
 
         self.ventana = VentanaClase(self)
         self.ventana.show()
-        self.hide()
-
+        self.ventana.raise_()
+        self.ventana.activateWindow()
+        # ✅ Mantener el menú principal detrás (no lo escondemos)
+        # self.hide()
         self.ventana.destroyed.connect(self.show)
 
-    # -------------------------------------------------
-    # MÓDULOS
-    # -------------------------------------------------
     def _ventas(self):
         from app.reporte_ventas.reporte_ventas_view import ReporteVentasView
         self._abrir_modulo(ReporteVentasView)
@@ -122,9 +84,6 @@ class MenuPrincipalView(QMainWindow):
         from app.lista_distribuidores.lista_distribuidores_view import ListaDistribuidoresView
         self._abrir_modulo(ListaDistribuidoresView)
 
-    # -------------------------------------------------
-    # OTROS
-    # -------------------------------------------------
     def _acerca_de(self):
         QMessageBox.information(
             self,

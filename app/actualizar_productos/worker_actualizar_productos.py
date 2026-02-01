@@ -1,3 +1,4 @@
+# app/actualizar_productos/worker_actualizar_productos.py
 from PySide6.QtCore import QObject, Signal
 
 

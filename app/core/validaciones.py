@@ -1,4 +1,6 @@
+# app/core/validaciones.py
 import re
+
 
 def validar_numero(valor, permitir_decimal=False):
     """
@@ -23,6 +25,7 @@ def validar_numero(valor, permitir_decimal=False):
         if not txt.isdigit() or len(txt) > 4:
             raise ValueError("Número entero inválido")
         return int(txt)
+
 
 def normalizar_decimal_api(valor):
     """

@@ -1,9 +1,10 @@
-from PySide6.QtCore import QObject, Signal
+# app/reporte_ventas/worker_reporte_ventas.py
+from PySide6.QtCore import QObject, Signal, Slot
 
 
 class WorkerReporteVentas(QObject):
     progreso = Signal(int, str)
-    terminado = Signal(object)
+    terminado = Signal(object, object)
     error = Signal(str)
 
     def __init__(self, controlador, desde, hasta):
@@ -12,16 +13,15 @@ class WorkerReporteVentas(QObject):
         self.desde = desde
         self.hasta = hasta
 
+    @Slot()
     def ejecutar(self):
         try:
-            modelo = self.controlador.generar_reporte(
-                desde=self.desde,
-                hasta=self.hasta,
-                callback_progreso=self._emitir
+            modelos = self.controlador.generar_reporte(
+                self.desde,
+                self.hasta,
+                callback_progreso=self.progreso.emit
             )
-            self.terminado.emit(modelo)
+            self.terminado.emit(*modelos)
         except Exception as e:
-            self.error.emit(str(e))
-
-    def _emitir(self, valor, mensaje):
-        self.progreso.emit(valor, mensaje)
+            # opcional: mensaje más claro
+            self.error.emit(f"Error al generar reporte: {e}")

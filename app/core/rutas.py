@@ -1,5 +1,6 @@
+# app/core/rutas.py
 import os
-import sys
+
 
 def obtener_directorio_app():
     base = os.getenv("LOCALAPPDATA") or os.path.expanduser("~")

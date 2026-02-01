@@ -138,7 +138,7 @@ class Ui_ListaDistribuidores(object):
     # setupUi
 
     def retranslateUi(self, ListaDistribuidores):
-        ListaDistribuidores.setWindowTitle(QCoreApplication.translate("ListaDistribuidores", u"Lista de Distribuidores", None))
+        ListaDistribuidores.setWindowTitle(QCoreApplication.translate("ListaDistribuidores", u"Lista de Productos para Distribuidores", None))
         ListaDistribuidores.setStyleSheet(QCoreApplication.translate("ListaDistribuidores", u"\n"
 "QMainWindow {\n"
 "    background-color: #f6f7fb;\n"
@@ -225,7 +225,7 @@ class Ui_ListaDistribuidores(object):
 "    border: none;\n"
 "}\n"
 "   ", None))
-        self.labelTitulo.setText(QCoreApplication.translate("ListaDistribuidores", u"Lista de Distribuidores", None))
+        self.labelTitulo.setText(QCoreApplication.translate("ListaDistribuidores", u"Lista de Productos para Distribuidores", None))
         self.btnGenerar.setText(QCoreApplication.translate("ListaDistribuidores", u"Generar Lista", None))
         self.btnExportar.setText(QCoreApplication.translate("ListaDistribuidores", u"Exportar", None))
         self.lblProcesando.setText(QCoreApplication.translate("ListaDistribuidores", u"Procesando:", None))

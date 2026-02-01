@@ -154,7 +154,11 @@ border-radius: 8px;
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEditStoreUrl"/>
+      <widget class="QLineEdit" name="lineEditStoreUrl">
+       <property name="placeholderText">
+        <string>https://e-commerce.com</string>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="labelConsumerKey">
@@ -167,6 +171,9 @@ border-radius: 8px;
       <widget class="QLineEdit" name="lineEditConsumerKey">
        <property name="echoMode">
         <enum>QLineEdit::Password</enum>
+       </property>
+       <property name="placeholderText">
+        <string>ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</string>
        </property>
       </widget>
      </item>
@@ -181,6 +188,9 @@ border-radius: 8px;
       <widget class="QLineEdit" name="lineEditConsumerSecret">
        <property name="echoMode">
         <enum>QLineEdit::Password</enum>
+       </property>
+       <property name="placeholderText">
+        <string>cs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</string>
        </property>
       </widget>
      </item>

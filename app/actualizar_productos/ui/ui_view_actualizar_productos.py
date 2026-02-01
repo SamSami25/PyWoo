@@ -34,10 +34,10 @@ class Ui_ActualizarProductos(object):
         self.layoutMain = QVBoxLayout(self.centralwidget)
         self.layoutMain.setSpacing(16)
         self.layoutMain.setObjectName(u"layoutMain")
-        self.labelActualizarProductos = QLabel(self.centralwidget)
-        self.labelActualizarProductos.setObjectName(u"labelActualizarProductos")
+        self.labelTitulo = QLabel(self.centralwidget)
+        self.labelTitulo.setObjectName(u"labelTitulo")
 
-        self.layoutMain.addWidget(self.labelActualizarProductos)
+        self.layoutMain.addWidget(self.labelTitulo)
 
         self.hboxLayout = QHBoxLayout()
         self.hboxLayout.setObjectName(u"hboxLayout")
@@ -239,7 +239,7 @@ class Ui_ActualizarProductos(object):
 "    border: none;\n"
 "}\n"
 "   ", None))
-        self.labelActualizarProductos.setText(QCoreApplication.translate("ActualizarProductos", u"Actualizaci\u00f3n de Productos", None))
+        self.labelTitulo.setText(QCoreApplication.translate("ActualizarProductos", u"Actualizaci\u00f3n de Productos", None))
         self.btnSubirArchivo.setText(QCoreApplication.translate("ActualizarProductos", u"Subir CSV / Excel", None))
         self.btnAplicar.setText(QCoreApplication.translate("ActualizarProductos", u"Aplicar Cambios", None))
         self.labelArchivo.setText(QCoreApplication.translate("ActualizarProductos", u"Archivo: (ninguno)", None))

@@ -25,7 +25,7 @@ class Ui_MenuPrincipal(object):
     def setupUi(self, MenuPrincipal):
         if not MenuPrincipal.objectName():
             MenuPrincipal.setObjectName(u"MenuPrincipal")
-        MenuPrincipal.resize(750, 516)
+        MenuPrincipal.resize(754, 532)
         icon = QIcon()
         icon.addFile(u":/assets/icons/label_reporte_ventas2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MenuPrincipal.setWindowIcon(icon)
@@ -107,29 +107,23 @@ class Ui_MenuPrincipal(object):
         MenuPrincipal.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MenuPrincipal)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 750, 21))
+        self.menubar.setGeometry(QRect(0, 0, 754, 26))
         self.menuWoo = QMenu(self.menubar)
         self.menuWoo.setObjectName(u"menuWoo")
         self.menuModulos = QMenu(self.menubar)
         self.menuModulos.setObjectName(u"menuModulos")
-        self.menuHerramientas = QMenu(self.menubar)
-        self.menuHerramientas.setObjectName(u"menuHerramientas")
         self.menuAyuda = QMenu(self.menubar)
         self.menuAyuda.setObjectName(u"menuAyuda")
         MenuPrincipal.setMenuBar(self.menubar)
 
         self.menubar.addAction(self.menuWoo.menuAction())
         self.menubar.addAction(self.menuModulos.menuAction())
-        self.menubar.addAction(self.menuHerramientas.menuAction())
         self.menubar.addAction(self.menuAyuda.menuAction())
         self.menuWoo.addAction(self.actionCredenciales_API)
         self.menuModulos.addAction(self.actionReporte_Ventas)
         self.menuModulos.addAction(self.actionInventario)
         self.menuModulos.addAction(self.actionActualizar_Productos)
         self.menuModulos.addAction(self.actionLista_de_Distribuidores)
-        self.menuHerramientas.addAction(self.actionSistema)
-        self.menuHerramientas.addAction(self.actionClaro)
-        self.menuHerramientas.addAction(self.actionOscuro)
         self.menuAyuda.addAction(self.actionAcerca_de)
 
         self.retranslateUi(MenuPrincipal)
@@ -234,7 +228,6 @@ class Ui_MenuPrincipal(object):
         self.btnDistribuidores.setText(QCoreApplication.translate("MenuPrincipal", u"Lista de Distribuidores", None))
         self.menuWoo.setTitle(QCoreApplication.translate("MenuPrincipal", u"WooCommerce", None))
         self.menuModulos.setTitle(QCoreApplication.translate("MenuPrincipal", u"M\u00f3dulos", None))
-        self.menuHerramientas.setTitle(QCoreApplication.translate("MenuPrincipal", u"Herramientas", None))
         self.menuAyuda.setTitle(QCoreApplication.translate("MenuPrincipal", u"Ayuda", None))
     # retranslateUi
 

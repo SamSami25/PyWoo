@@ -1,3 +1,4 @@
+# app/core/excepciones.py
 class PyWooError(Exception):
     """Excepción base del proyecto PyWoo"""
     pass

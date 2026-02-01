@@ -16,9 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDateEdit, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QMainWindow, QProgressBar,
-    QPushButton, QSizePolicy, QSpacerItem, QTabWidget,
-    QTableView, QVBoxLayout, QWidget)
+    QLabel, QMainWindow, QProgressBar, QPushButton,
+    QSizePolicy, QSpacerItem, QTabWidget, QTableView,
+    QVBoxLayout, QWidget)
 import iconos_rc
 
 class Ui_ReporteVentas(object):
@@ -72,26 +72,16 @@ class Ui_ReporteVentas(object):
 
         self.hboxLayout.addWidget(self.btnGenerar)
 
+        self.btnExportar = QPushButton(self.centralwidget)
+        self.btnExportar.setObjectName(u"btnExportar")
+
+        self.hboxLayout.addWidget(self.btnExportar)
+
 
         self.layoutMain.addLayout(self.hboxLayout)
 
         self.hboxLayout1 = QHBoxLayout()
         self.hboxLayout1.setObjectName(u"hboxLayout1")
-        self.lblArchivo = QLabel(self.centralwidget)
-        self.lblArchivo.setObjectName(u"lblArchivo")
-
-        self.hboxLayout1.addWidget(self.lblArchivo)
-
-        self.lineSalida = QLineEdit(self.centralwidget)
-        self.lineSalida.setObjectName(u"lineSalida")
-
-        self.hboxLayout1.addWidget(self.lineSalida)
-
-        self.btnExportar = QPushButton(self.centralwidget)
-        self.btnExportar.setObjectName(u"btnExportar")
-
-        self.hboxLayout1.addWidget(self.btnExportar)
-
 
         self.layoutMain.addLayout(self.hboxLayout1)
 
@@ -117,24 +107,14 @@ class Ui_ReporteVentas(object):
         self.tabWidget.setObjectName(u"tabWidget")
         self.tabPedidos = QWidget()
         self.tabPedidos.setObjectName(u"tabPedidos")
-        self.vboxLayout = QVBoxLayout(self.tabPedidos)
-        self.vboxLayout.setObjectName(u"vboxLayout")
+        self.verticalLayoutTabPedidos = QVBoxLayout(self.tabPedidos)
+        self.verticalLayoutTabPedidos.setObjectName(u"verticalLayoutTabPedidos")
         self.tableSimples = QTableView(self.tabPedidos)
         self.tableSimples.setObjectName(u"tableSimples")
 
-        self.vboxLayout.addWidget(self.tableSimples)
+        self.verticalLayoutTabPedidos.addWidget(self.tableSimples)
 
         self.tabWidget.addTab(self.tabPedidos, "")
-        self.widget = QWidget()
-        self.widget.setObjectName(u"widget")
-        self.vboxLayout1 = QVBoxLayout(self.widget)
-        self.vboxLayout1.setObjectName(u"vboxLayout1")
-        self.tableVariados = QTableView(self.widget)
-        self.tableVariados.setObjectName(u"tableVariados")
-
-        self.vboxLayout1.addWidget(self.tableVariados)
-
-        self.tabWidget.addTab(self.widget, "")
 
         self.layoutMain.addWidget(self.tabWidget)
 
@@ -168,7 +148,7 @@ class Ui_ReporteVentas(object):
 
         self.retranslateUi(ReporteVentas)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(ReporteVentas)
@@ -266,12 +246,9 @@ class Ui_ReporteVentas(object):
         self.lblDesde.setText(QCoreApplication.translate("ReporteVentas", u"Desde", None))
         self.lblHasta.setText(QCoreApplication.translate("ReporteVentas", u"Hasta", None))
         self.btnGenerar.setText(QCoreApplication.translate("ReporteVentas", u"Generar Reporte", None))
-        self.lblArchivo.setText(QCoreApplication.translate("ReporteVentas", u"Nombre Archivo", None))
-        self.lineSalida.setPlaceholderText(QCoreApplication.translate("ReporteVentas", u"ventas_DESDE_HASTA.xlsx", None))
         self.btnExportar.setText(QCoreApplication.translate("ReporteVentas", u"Exportar", None))
         self.lblProcesando.setText(QCoreApplication.translate("ReporteVentas", u"Procesando:", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabPedidos), QCoreApplication.translate("ReporteVentas", u"Pedidos", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.widget), "")
         self.btnVolver.setText(QCoreApplication.translate("ReporteVentas", u"Volver al Men\u00fa", None))
         self.labelEstado.setText("")
     # retranslateUi

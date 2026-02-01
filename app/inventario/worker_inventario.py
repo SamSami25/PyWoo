@@ -1,3 +1,4 @@
+# app/inventario/worker_inventario.py
 from PySide6.QtCore import QObject, Signal
 
 
