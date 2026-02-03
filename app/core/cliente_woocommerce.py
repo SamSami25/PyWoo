@@ -13,11 +13,10 @@ class ClienteWooCommerce:
 
         self.base_url = f"{cred['url'].rstrip('/')}/wp-json/wc/v3"
         self.auth = (cred["consumer_key"], cred["consumer_secret"])
-        self.session = requests.Session()
 
     def probar_conexion(self):
         try:
-            r = self.session.get(
+            r = requests.get(
                 f"{self.base_url}/system_status",
                 auth=self.auth,
                 timeout=10
@@ -28,6 +27,10 @@ class ClienteWooCommerce:
             raise WooCommerceConexionError(str(e))
 
     def obtener_pedidos(self, desde=None, hasta=None, per_page=100):
+        """
+        Trae TODOS los pedidos paginando.
+        Nota: status='any' para no perder pedidos por estado.
+        """
         page = 1
         todos = []
         try:
@@ -38,7 +41,7 @@ class ClienteWooCommerce:
                 if hasta:
                     params["before"] = f"{hasta}T23:59:59"
 
-                r = self.session.get(
+                r = requests.get(
                     f"{self.base_url}/orders",
                     auth=self.auth,
                     params=params,
@@ -47,14 +50,11 @@ class ClienteWooCommerce:
                 r.raise_for_status()
 
                 data = r.json() or []
-                if not data:
-                    break
-
                 todos.extend(data)
 
+                # corte robusto
                 if len(data) < per_page:
                     break
-
                 page += 1
 
             return todos
@@ -65,13 +65,16 @@ class ClienteWooCommerce:
         return self.obtener_pedidos(*args, **kwargs)
 
     def obtener_productos(self, per_page=100, filtro_stock=None):
+        """
+        context='edit' para que Woo entregue meta_data (necesario para costos/plugins).
+        """
         page = 1
         todos = []
         try:
             while True:
-                params = {"per_page": per_page, "page": page}
+                params = {"per_page": per_page, "page": page, "context": "edit"}
 
-                r = self.session.get(
+                r = requests.get(
                     f"{self.base_url}/products",
                     auth=self.auth,
                     params=params,
@@ -80,14 +83,11 @@ class ClienteWooCommerce:
                 r.raise_for_status()
 
                 productos = r.json() or []
-                if not productos:
-                    break
-
                 todos.extend(productos)
 
+                # corte robusto
                 if len(productos) < per_page:
                     break
-
                 page += 1
 
             if filtro_stock == "sin_stock":
@@ -100,12 +100,16 @@ class ClienteWooCommerce:
             raise WooCommerceConexionError(str(e))
 
     def obtener_variaciones_producto(self, producto_id: int, per_page: int = 100):
+        """
+        ✅ NECESARIO para productos variables.
+        context='edit' para traer meta_data de variaciones (ATUM/CoG, etc.)
+        """
         page = 1
         todos = []
         try:
             while True:
-                params = {"per_page": per_page, "page": page}
-                r = self.session.get(
+                params = {"per_page": per_page, "page": page, "context": "edit"}
+                r = requests.get(
                     f"{self.base_url}/products/{producto_id}/variations",
                     auth=self.auth,
                     params=params,
@@ -114,14 +118,11 @@ class ClienteWooCommerce:
                 r.raise_for_status()
 
                 data = r.json() or []
-                if not data:
-                    break
-
                 todos.extend(data)
 
+                # corte robusto
                 if len(data) < per_page:
                     break
-
                 page += 1
 
             return todos
@@ -136,11 +137,12 @@ class ClienteWooCommerce:
             data["stock_quantity"] = int(stock)
 
         if precio is not None:
+            # Evita errores de float (centavos) -> Decimal con redondeo financiero
             p = Decimal(str(precio)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             data["regular_price"] = f"{p:.2f}"
 
         try:
-            r = self.session.put(
+            r = requests.put(
                 f"{self.base_url}/products/{producto_id}",
                 auth=self.auth,
                 json=data,
@@ -152,6 +154,7 @@ class ClienteWooCommerce:
             raise WooCommerceConexionError(str(e))
 
     def actualizar_variacion(self, producto_id: int, variacion_id: int, stock=None, precio=None):
+        """Actualiza una variación de un producto variable."""
         data = {}
 
         if stock is not None:
@@ -163,7 +166,7 @@ class ClienteWooCommerce:
             data["regular_price"] = f"{p:.2f}"
 
         try:
-            r = self.session.put(
+            r = requests.put(
                 f"{self.base_url}/products/{producto_id}/variations/{variacion_id}",
                 auth=self.auth,
                 json=data,
@@ -173,18 +176,3 @@ class ClienteWooCommerce:
             return r.json()
         except Exception as e:
             raise WooCommerceConexionError(str(e))
-
-    def obtener_sku_producto(self, producto_id: int) -> str:
-        try:
-            r = self.session.get(
-                f"{self.base_url}/products/{producto_id}",
-                auth=self.auth,
-                timeout=30,
-            )
-            r.raise_for_status()
-            return (r.json().get("sku") or "").strip()
-        except Exception:
-            return ""
-
-    def obtener_sku_variacion(self, variacion_id: int) -> str:
-        return ""

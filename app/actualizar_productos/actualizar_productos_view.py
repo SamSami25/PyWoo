@@ -20,8 +20,7 @@ from app.core.dialogos import mostrar_error, mostrar_info
 class ActualizarProductosView(BaseModuleWindow):
     """
     Vista del módulo Actualización de Productos.
-    - Hereda BaseModuleWindow para tener menú superior y tema claro fijo.
-    - Usa hilos para procesar y aplicar cambios sin congelar UI.
+    - Hilos para procesar y aplicar cambios sin congelar UI.
     """
 
     def __init__(self, parent=None):
@@ -42,6 +41,7 @@ class ActualizarProductosView(BaseModuleWindow):
 
         self.dialogo = None
         self._procesado = False
+        self._aplicado = False  # ✅ exportar solo después de aplicar
         self._ocupado = False
 
         self._configurar_tablas()
@@ -52,7 +52,6 @@ class ActualizarProductosView(BaseModuleWindow):
     # UI
     # ----------------------------
     def _configurar_tablas(self):
-        # ✅ Ajuste para que NO sobre espacio a la derecha y se adapte a la ventana
         for tabla in (self.ui.tableSimples, self.ui.tableVariados):
             header = tabla.horizontalHeader()
             header.setSectionResizeMode(QHeaderView.Stretch)
@@ -70,7 +69,9 @@ class ActualizarProductosView(BaseModuleWindow):
         self._ocupado = ocupado
         self.ui.btnSubirArchivo.setEnabled(not ocupado)
         self.ui.btnVolver.setEnabled(not ocupado)
-        self.ui.btnExportar.setEnabled((not ocupado) and self._procesado)
+        # ✅ Exportar SOLO si ya se aplicó
+        self.ui.btnExportar.setEnabled((not ocupado) and self._aplicado)
+        # Aplicar se habilita cuando hay procesado
         self.ui.btnAplicar.setEnabled((not ocupado) and self._procesado)
 
     def _conectar(self):
@@ -110,7 +111,7 @@ class ActualizarProductosView(BaseModuleWindow):
 
     def closeEvent(self, event):
         self._detener_hilos()
-        if getattr(self, "menu_controller", None):
+        if getattr(self, 'menu_controller', None):
             try:
                 self.menu_controller.raise_()
                 self.menu_controller.activateWindow()
@@ -149,6 +150,7 @@ class ActualizarProductosView(BaseModuleWindow):
         self._set_ocupado(True)
 
         self._procesado = False
+        self._aplicado = False  # ✅ reset: exportar bloqueado hasta aplicar
         self.ui.btnExportar.setEnabled(False)
         self.ui.btnAplicar.setEnabled(False)
         self.ui.tableSimples.setModel(None)
@@ -241,13 +243,18 @@ class ActualizarProductosView(BaseModuleWindow):
 
         self.ui.labelEstado.setText("Productos procesados correctamente")
         self._procesado = True
-        self._set_ocupado(False)
 
+        # ✅ Exportar sigue bloqueado hasta aplicar
+        self.ui.btnExportar.setEnabled(False)
+
+        self._set_ocupado(False)
         mostrar_info("Productos procesados correctamente.", self)
 
     def _finalizar_aplicar(self):
         self._cerrar_dialogo()
+        self._aplicado = True  # ✅ ahora sí se puede exportar
         self._set_ocupado(False)
+        self.ui.btnExportar.setEnabled(True)
         mostrar_info("Cambios aplicados correctamente.", self)
 
     def _error(self, mensaje):
@@ -260,6 +267,10 @@ class ActualizarProductosView(BaseModuleWindow):
     # ----------------------------
     def _exportar(self):
         if self._ocupado:
+            return
+
+        if not self._aplicado:
+            mostrar_error("Debe aplicar cambios antes de exportar.", self)
             return
 
         hoy = QDate.currentDate().toString("ddMMyyyy")

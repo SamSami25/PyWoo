@@ -5,6 +5,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QFont
 
@@ -82,7 +84,6 @@ def _validar_negrita_excel(ws, idxs_requeridos: List[int], nombres_requeridos: L
 
 
 def _to_decimal(x: Any) -> Decimal:
-    """Convierte a Decimal seguro (acepta coma)."""
     if x is None:
         return Decimal("0")
     s = str(x).strip()
@@ -97,7 +98,7 @@ def _to_decimal(x: Any) -> Decimal:
 
 def _fmt_money(x: Any) -> str:
     """
-    Máximo 2 decimales (sin basura flotante).
+    Máximo 2 decimales (redondeo financiero).
     - 12.00 -> 12
     - 6.50 -> 6.5
     - 1.7391 -> 1.74
@@ -120,9 +121,9 @@ def _get_meta(meta_data: List[dict], key: str) -> Optional[str]:
 def _get_purchase_cost(product: dict) -> Decimal:
     """
     Prioridad multi-tienda:
-      1) _purchase_price (ATUM Inventory)
-      2) _wc_cog_cost    (Cost of Goods - WPFactory)
-      3) purchase_price  (legacy/custom)
+      1) _purchase_price (ATUM)
+      2) _wc_cog_cost (Cost of Goods)
+      3) purchase_price (legacy/custom)
     """
     meta = product.get("meta_data", []) or []
     for k in ("_purchase_price", "_wc_cog_cost", "purchase_price"):
@@ -130,6 +131,19 @@ def _get_purchase_cost(product: dict) -> Decimal:
         if v is not None and _to_decimal(v) > 0:
             return _to_decimal(v)
     return Decimal("0")
+
+
+def _to_float_any(x: Any) -> Optional[float]:
+    if x is None:
+        return None
+    s = str(x).strip()
+    if not s:
+        return None
+    s = s.replace(",", ".")
+    try:
+        return float(s)
+    except Exception:
+        return None
 
 
 # ----------------------------
@@ -150,7 +164,7 @@ class RegistroProducto:
 
     _id: Optional[int] = None
     _parent_id: Optional[int] = None
-    _tipo: str = "simple"  # simple | variation | otro
+    _tipo: str = "simple"
 
     def como_fila(self) -> List[Any]:
         return [
@@ -162,7 +176,7 @@ class RegistroProducto:
             self.precio_actual,
             self.precio_compra,
             self.precio_venta_actual,
-            "" if self.precio_venta_nuevo is None else _fmt_money(self.precio_venta_nuevo),
+            "" if self.precio_venta_nuevo is None else self.precio_venta_nuevo,
             self.estado,
         ]
 
@@ -233,12 +247,10 @@ class ModeloActualizarProductos(QAbstractTableModel):
         except Exception:
             return False
 
-        # Recalcular estado básico
+        # actualizar estado local
         r.estado = "Pendiente" if r.tiene_cambios() else "Sin cambio"
 
         self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
-        idx_estado = self.index(index.row(), COL_ESTADO)
-        self.dataChanged.emit(idx_estado, idx_estado, [Qt.DisplayRole])
         return True
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
@@ -368,41 +380,35 @@ class ControladorActualizarProductos:
             precio_nuevo = excel.get("PRECIO") if excel else None
 
             tipo = str(p.get("type") or "simple").strip().lower()
+            categoria_parent = ", ".join(c.get("name", "") for c in (p.get("categories") or []))
 
-            # 1) Productos simples
             if tipo == "simple":
                 costo = _get_purchase_cost(p)
-                registro = RegistroProducto(
+                reg = RegistroProducto(
                     sku=sku,
                     nombre=p.get("name", ""),
-                    categoria=", ".join(c.get("name", "") for c in (p.get("categories") or [])),
+                    categoria=categoria_parent,
                     stock_actual=p.get("stock_quantity", 0),
                     stock_nuevo=stock_nuevo,
                     precio_actual=_fmt_money(p.get("price", 0)),
                     precio_compra=_fmt_money(costo),
                     precio_venta_actual=_fmt_money(p.get("regular_price", p.get("price", 0))),
-                    precio_venta_nuevo=precio_nuevo,
-                    estado="",
+                    precio_venta_nuevo=None if precio_nuevo is None else float(_fmt_money(precio_nuevo)),
+                    estado="Pendiente" if (stock_nuevo is not None or precio_nuevo is not None) else "Sin cambio",
                     _id=p.get("id"),
                     _parent_id=None,
                     _tipo="simple",
                 )
-                registro.estado = "Pendiente" if registro.tiene_cambios() else "Sin cambio"
-                self.simples.append(registro)
+                self.simples.append(reg)
 
-            # 2) Productos variables (SKU en variaciones)
             elif tipo == "variable":
                 parent_id = p.get("id")
-                parent_categoria = ", ".join(c.get("name", "") for c in (p.get("categories") or []))
                 parent_name = p.get("name", "")
-
                 variaciones = self.cliente.obtener_variaciones_producto(int(parent_id)) if parent_id else []
                 for v in variaciones:
                     sku_v = (v.get("sku") or "").strip()
-                    if not sku_v:
-                        sku_v = ""
-
                     excel_v = datos_archivo.get(sku_v) if sku_v else None
+
                     stock_v = excel_v.get("STOCK") if excel_v else None
                     precio_v = excel_v.get("PRECIO") if excel_v else None
 
@@ -417,43 +423,41 @@ class ControladorActualizarProductos:
 
                     costo_v = _get_purchase_cost(v)
 
-                    registro_v = RegistroProducto(
+                    regv = RegistroProducto(
                         sku=sku_v,
                         nombre=nombre_mostrar,
-                        categoria=parent_categoria,
+                        categoria=categoria_parent,
                         stock_actual=v.get("stock_quantity", 0),
                         stock_nuevo=stock_v,
                         precio_actual=_fmt_money(v.get("price", 0)),
                         precio_compra=_fmt_money(costo_v),
                         precio_venta_actual=_fmt_money(v.get("regular_price", v.get("price", 0))),
-                        precio_venta_nuevo=precio_v,
-                        estado="",
+                        precio_venta_nuevo=None if precio_v is None else float(_fmt_money(precio_v)),
+                        estado="Pendiente" if (stock_v is not None or precio_v is not None) else "Sin cambio",
                         _id=v.get("id"),
                         _parent_id=parent_id,
                         _tipo="variation",
                     )
-                    registro_v.estado = "Pendiente" if registro_v.tiene_cambios() else "Sin cambio"
-                    self.variados.append(registro_v)
+                    self.variados.append(regv)
 
-            # Otros tipos
             else:
                 costo = _get_purchase_cost(p)
-                registro = RegistroProducto(
+                reg = RegistroProducto(
                     sku=sku,
                     nombre=p.get("name", ""),
-                    categoria=", ".join(c.get("name", "") for c in (p.get("categories") or [])),
+                    categoria=categoria_parent,
                     stock_actual=p.get("stock_quantity", 0),
                     stock_nuevo=stock_nuevo,
                     precio_actual=_fmt_money(p.get("price", 0)),
                     precio_compra=_fmt_money(costo),
                     precio_venta_actual=_fmt_money(p.get("regular_price", p.get("price", 0))),
-                    precio_venta_nuevo=precio_nuevo,
-                    estado=f"⚠ No editable ({tipo})",
+                    precio_venta_nuevo=None if precio_nuevo is None else float(_fmt_money(precio_nuevo)),
+                    estado=f"⚠ Tipo: {tipo}",
                     _id=p.get("id"),
                     _parent_id=None,
                     _tipo=tipo,
                 )
-                self.variados.append(registro)
+                self.variados.append(reg)
 
             if callback:
                 callback(int((i / total) * 100), f"Procesando producto {i} de {total}")
@@ -522,18 +526,83 @@ class ControladorActualizarProductos:
 
     # -------- EXPORTAR --------
     def exportar_excel(self, ruta: str):
-        """Exporta en DOS pestañas: Productos Simples / Productos Variados."""
+        """
+        Exporta en DOS pestañas (como reporte):
+        - Productos Simples
+        - Productos Variados
+
+        Columnas exportadas:
+        SKU | NOMBRE | CATEGORÍA | STOCK (NUEVO) | PRECIO COMPRA | PRECIO VENTA (NUEVO) | ESTADO
+        """
+        HEADERS_EXPORT = [
+            "SKU",
+            "NOMBRE",
+            "CATEGORÍA",
+            "STOCK",
+            "PRECIO COMPRA",
+            "PRECIO VENTA",
+            "ESTADO",
+        ]
+
+        def fila_export(r: RegistroProducto):
+            return [
+                r.sku,
+                r.nombre,
+                r.categoria,
+                "" if r.stock_nuevo is None else int(r.stock_nuevo),
+                _to_float_any(r.precio_compra) if _to_float_any(r.precio_compra) is not None else 0.0,
+                "" if r.precio_venta_nuevo is None else float(r.precio_venta_nuevo),
+                r.estado,
+            ]
+
+        def aplicar_formato(ws):
+            header_font = Font(bold=True)
+            header_fill = PatternFill("solid", fgColor="D9E1F2")
+            center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+            ws.append(HEADERS_EXPORT)
+            for col in range(1, len(HEADERS_EXPORT) + 1):
+                c = ws.cell(row=1, column=col)
+                c.font = header_font
+                c.fill = header_fill
+                c.alignment = center
+
+            ws.freeze_panes = "A2"
+            last_col = get_column_letter(len(HEADERS_EXPORT))
+            ws.auto_filter.ref = f"A1:{last_col}1"
+
+            widths = [18, 48, 30, 10, 14, 14, 18]
+            for i, w in enumerate(widths, start=1):
+                ws.column_dimensions[get_column_letter(i)].width = w
+
+            # STOCK entero
+            for row in ws.iter_rows(min_row=2, min_col=4, max_col=4):
+                for cell in row:
+                    cell.number_format = "0"
+                    cell.alignment = center
+
+            # precios 2 decimales
+            for row in ws.iter_rows(min_row=2, min_col=5, max_col=6):
+                for cell in row:
+                    cell.number_format = "0.00"
+                    cell.alignment = center
+
+            # estado centrado
+            for row in ws.iter_rows(min_row=2, min_col=7, max_col=7):
+                for cell in row:
+                    cell.alignment = center
+
         wb = Workbook()
 
         ws1 = wb.active
         ws1.title = "Productos Simples"
-        ws1.append(HEADERS_UI)
+        aplicar_formato(ws1)
         for r in self.simples:
-            ws1.append(r.como_fila())
+            ws1.append(fila_export(r))
 
         ws2 = wb.create_sheet("Productos Variados")
-        ws2.append(HEADERS_UI)
+        aplicar_formato(ws2)
         for r in self.variados:
-            ws2.append(r.como_fila())
+            ws2.append(fila_export(r))
 
         wb.save(ruta)
