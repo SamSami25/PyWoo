@@ -42,7 +42,7 @@ class ReporteVentasView(BaseModuleWindow):
     # --------------------------------------------------
     def _configurar(self):
         hoy = QDate.currentDate()
-        self.ui.dateDesde.setDate(hoy)
+        self.ui.dateDesde.setDate(hoy.addYears(-1))
         self.ui.dateHasta.setDate(hoy)
 
         # Solo tabla Pedidos (tableSimples)

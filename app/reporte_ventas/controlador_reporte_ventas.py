@@ -1,7 +1,9 @@
 # app/reporte_ventas/controlador_reporte_ventas.py
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
+
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from PySide6.QtCore import QAbstractTableModel, Qt
 from PySide6.QtGui import QFont
@@ -47,17 +49,31 @@ def _safe_str(x) -> str:
     return "" if x is None else str(x)
 
 
-def _safe_float(x) -> float:
+def _to_decimal(x: Any) -> Decimal:
+    """Convierte a Decimal de forma segura.
+
+    WooCommerce normalmente devuelve montos como strings. Usar Decimal evita
+    errores típicos de float (por ejemplo, totales que difieren en 0.01).
+    """
+    if x is None or x == "":
+        return Decimal("0")
     try:
-        if x is None or x == "":
-            return 0.0
-        return float(x)
-    except Exception:
-        return 0.0
+        return Decimal(str(x))
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
+
+
+def _money_dec(x: Decimal) -> str:
+    return str(x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def _safe_float(x) -> float:
+    # Solo para xlsxwriter.write_number (requiere float)
+    return float(_to_decimal(x))
 
 
 def _money(x) -> str:
-    return f"{_safe_float(x):.2f}"
+    return _money_dec(_to_decimal(x))
 
 
 def _estado_es(status: str) -> str:
@@ -139,24 +155,28 @@ class ControladorReporteVentas:
     def _obtener_notas(self, order: dict) -> str:
         return (order.get("customer_note") or "").strip()
 
-    def _obtener_descuento(self, order: dict) -> float:
-        return _safe_float(order.get("discount_total"))
+    def _obtener_descuento(self, order: dict) -> Decimal:
+        return _to_decimal(order.get("discount_total"))
 
-    def _obtener_envio(self, order: dict) -> float:
-        return _safe_float(order.get("shipping_total"))
+    def _obtener_envio(self, order: dict) -> Decimal:
+        return _to_decimal(order.get("shipping_total"))
 
-    def _obtener_total(self, order: dict) -> float:
-        return _safe_float(order.get("total"))
+    def _obtener_total(self, order: dict) -> Decimal:
+        return _to_decimal(order.get("total"))
 
-    def _obtener_iva(self, order: dict) -> float:
-        return _safe_float(order.get("total_tax"))
+    def _obtener_iva(self, order: dict) -> Decimal:
+        return _to_decimal(order.get("total_tax"))
 
-    def _obtener_subtotal(self, order: dict) -> float:
-        # subtotal por orden = suma(subtotal) de line_items (sin impuestos)
+    def _obtener_subtotal(self, order: dict) -> Decimal:
+        """Subtotal sin impuestos.
+
+        Preferimos line_items.subtotal (antes de descuentos por cupón).
+        Si por alguna razón no viene, usamos un fallback consistente.
+        """
         line_items = order.get("line_items") or []
-        subtotal = 0.0
+        subtotal = Decimal("0")
         for li in line_items:
-            subtotal += _safe_float(li.get("subtotal"))
+            subtotal += _to_decimal(li.get("subtotal"))
         if subtotal > 0:
             return subtotal
 
@@ -166,23 +186,70 @@ class ControladorReporteVentas:
         tax = self._obtener_iva(order)
         discount = self._obtener_descuento(order)
         calc = total - shipping - tax + discount
-        return max(calc, 0.0)
+        return max(calc, Decimal("0"))
+
+    def _meta_value(self, order: dict, *keys: str) -> str:
+        """Busca un valor en meta_data por varias posibles claves."""
+        metas = order.get("meta_data") or []
+        keys_norm = {k.strip().lower() for k in keys if k and k.strip()}
+        for m in metas:
+            k = str(m.get("key") or "").strip().lower()
+            if k in keys_norm:
+                v = m.get("value")
+                return "" if v is None else str(v).strip()
+        return ""
 
     def _obtener_identificacion(self, billing: dict, order: dict) -> str:
-        # ⚠️ Esto depende de tu tienda. Si tu identificación está en meta_data, aquí puedes leerla.
-        # Por ahora, intentamos billing.company (como tenías) y si no, vacío.
+        """Intenta obtener Cédula/RUC/Identificación.
+
+        Depende del plugin/campos de checkout. Probamos varias rutas comunes:
+        - billing.*
+        - meta_data (Checkout Field Editor, plugins locales, etc.)
+        """
+        # 1) Algunos plugins guardan directamente en billing
+        for k in (
+            "cedula",
+            "ruc",
+            "dni",
+            "documento",
+            "identificacion",
+            "vat",
+        ):
+            v = (billing.get(k) or "").strip()
+            if v:
+                return v
+
+        # 2) Meta_data: múltiples nombres típicos
+        v = self._meta_value(
+            order,
+            "_billing_cedula",
+            "billing_cedula",
+            "cedula",
+            "_billing_ruc",
+            "billing_ruc",
+            "ruc",
+            "cedula_ruc",
+            "_billing_documento",
+            "billing_documento",
+            "documento",
+            "_billing_vat",
+            "billing_vat",
+            "vat",
+        )
+        if v:
+            return v
+
+        # 3) Último fallback: company (si lo usaban así antes)
         return (billing.get("company") or "").strip()
 
     def _obtener_cajero(self, order: dict) -> str:
-        # No estándar: si guardas "cajero" en meta_data, podrías leerlo aquí.
-        return ""
+        # No estándar: POS/administración podría guardar usuario en meta_data
+        return self._meta_value(order, "cajero", "cashier", "pos_user", "_pos_user")
 
     # ---------------- GENERAR ----------------
     def generar_reporte(self, desde, hasta, callback_progreso: Optional[Callable[[int, str], None]] = None):
-        pedidos = self.cliente.obtener_pedidos(
-            desde=desde.isoformat(),
-            hasta=hasta.isoformat()
-        )
+        # Enviamos date directamente; el cliente construye ISO8601 con zona
+        pedidos = self.cliente.obtener_pedidos(desde=desde, hasta=hasta)
 
         self._pedidos.clear()
         total = max(len(pedidos), 1)
@@ -215,17 +282,17 @@ class ControladorReporteVentas:
             cajero = self._obtener_cajero(o)
 
             # Utilidad: si todavía no tienes costos, mejor 0.00 (no inventa)
-            utilidad_val = 0.0
+            utilidad_val = Decimal("0")
 
             fila = {
                 "fecha": fecha,
                 "cliente": cliente,
-                "subtotal": _money(subtotal),
-                "envio": _money(envio),
-                "iva": _money(iva),
-                "descuento": _money(descuento),
-                "total": _money(total_orden),
-                "utilidad": _money(utilidad_val),
+                "subtotal": _money_dec(subtotal),
+                "envio": _money_dec(envio),
+                "iva": _money_dec(iva),
+                "descuento": _money_dec(descuento),
+                "total": _money_dec(total_orden),
+                "utilidad": _money_dec(utilidad_val),
                 "estado": estado,
                 "notas": notas,
                 "pedido": pedido_id,
@@ -296,13 +363,13 @@ class ControladorReporteVentas:
         for col, key in enumerate(COLUMN_KEYS):
             ws.set_column(col, col, widths.get(key, 18))
 
-        # Datos
-        sum_sub = sum(_safe_float(x.get("subtotal")) for x in self._pedidos)
-        sum_env = sum(_safe_float(x.get("envio")) for x in self._pedidos)
-        sum_iva = sum(_safe_float(x.get("iva")) for x in self._pedidos)
-        sum_desc = sum(_safe_float(x.get("descuento")) for x in self._pedidos)
-        sum_total = sum(_safe_float(x.get("total")) for x in self._pedidos)
-        sum_util = sum(_safe_float(x.get("utilidad")) for x in self._pedidos)
+        # Datos (sumamos con Decimal para evitar desfases por float)
+        sum_sub_d = sum((_to_decimal(x.get("subtotal")) for x in self._pedidos), Decimal("0"))
+        sum_env_d = sum((_to_decimal(x.get("envio")) for x in self._pedidos), Decimal("0"))
+        sum_iva_d = sum((_to_decimal(x.get("iva")) for x in self._pedidos), Decimal("0"))
+        sum_desc_d = sum((_to_decimal(x.get("descuento")) for x in self._pedidos), Decimal("0"))
+        sum_total_d = sum((_to_decimal(x.get("total")) for x in self._pedidos), Decimal("0"))
+        sum_util_d = sum((_to_decimal(x.get("utilidad")) for x in self._pedidos), Decimal("0"))
 
         for r, fila in enumerate(self._pedidos, start=1):
             for c, key in enumerate(COLUMN_KEYS):
@@ -324,11 +391,11 @@ class ControladorReporteVentas:
 
         # escribe totales en columnas específicas
         idx = {k: i for i, k in enumerate(COLUMN_KEYS)}
-        ws.write_number(totals_row, idx["subtotal"], sum_sub, totals_money_fmt)
-        ws.write_number(totals_row, idx["envio"], sum_env, totals_money_fmt)
-        ws.write_number(totals_row, idx["iva"], sum_iva, totals_money_fmt)
-        ws.write_number(totals_row, idx["descuento"], sum_desc, totals_money_fmt)
-        ws.write_number(totals_row, idx["total"], sum_total, totals_money_fmt)
-        ws.write_number(totals_row, idx["utilidad"], sum_util, totals_money_fmt)
+        ws.write_number(totals_row, idx["subtotal"], float(sum_sub_d), totals_money_fmt)
+        ws.write_number(totals_row, idx["envio"], float(sum_env_d), totals_money_fmt)
+        ws.write_number(totals_row, idx["iva"], float(sum_iva_d), totals_money_fmt)
+        ws.write_number(totals_row, idx["descuento"], float(sum_desc_d), totals_money_fmt)
+        ws.write_number(totals_row, idx["total"], float(sum_total_d), totals_money_fmt)
+        ws.write_number(totals_row, idx["utilidad"], float(sum_util_d), totals_money_fmt)
 
         workbook.close()

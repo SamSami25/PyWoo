@@ -1,6 +1,7 @@
 # app/lista_distribuidores/lista_distribuidores_view.py
-from PySide6.QtCore import QThread, QDate
+from PySide6.QtCore import QThread, QDate, QEvent, Qt, QUrl
 from PySide6.QtWidgets import QFileDialog, QHeaderView
+from PySide6.QtGui import QDesktopServices, QCursor
 from shiboken6 import isValid
 
 from app.lista_distribuidores.ui.ui_view_lista_distribuidores import Ui_ListaDistribuidores
@@ -11,20 +12,16 @@ from app.core.base_windows import BaseModuleWindow
 from app.core.proceso import ProcessDialog
 from app.core.dialogos import mostrar_error, mostrar_info
 
+COL_URL = 11  # URL es la última columna
+
 
 class ListaDistribuidoresView(BaseModuleWindow):
-    """
-    - Menú superior + tema claro (BaseModuleWindow)
-    - Hilo para generar lista
-    """
-
     def __init__(self, parent=None):
         super().__init__(menu_controller=parent, parent=parent)
 
         self.ui = Ui_ListaDistribuidores()
         self.ui.setupUi(self)
 
-        # ✅ algunos .ui pueden pisar el menú común
         self._build_menu()
 
         self.controlador = ControladorListaDistribuidores()
@@ -38,12 +35,16 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._configurar()
         self._conectar()
 
-    # -------------------------------------------------
+        # ✅ cursor mano al pasar por URL
+        self.ui.tableSimples.viewport().installEventFilter(self)
+        self.ui.tableVariados.viewport().installEventFilter(self)
+
     def _configurar(self):
         for tabla in (self.ui.tableSimples, self.ui.tableVariados):
             header = tabla.horizontalHeader()
             header.setSectionResizeMode(QHeaderView.ResizeToContents)
-            header.setStretchLastSection(True)
+            header.setStretchLastSection(False)
+            header.setSectionResizeMode(COL_URL, QHeaderView.Stretch)  # ✅ URL ocupa el resto
 
         self.ui.btnExportar.setEnabled(False)
         self.ui.labelEstado.setText("")
@@ -56,11 +57,14 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self.ui.btnVolver.setEnabled(not ocupado)
         self.ui.btnExportar.setEnabled((not ocupado) and self._generado)
 
-    # -------------------------------------------------
     def _conectar(self):
         self.ui.btnGenerar.clicked.connect(self._generar)
         self.ui.btnExportar.clicked.connect(self._exportar)
         self.ui.btnVolver.clicked.connect(self._volver_menu)
+
+        # ✅ abrir URL con click
+        self.ui.tableSimples.clicked.connect(self._abrir_url_desde_click)
+        self.ui.tableVariados.clicked.connect(self._abrir_url_desde_click)
 
     def _volver_menu(self):
         if self._ocupado:
@@ -70,7 +74,6 @@ class ListaDistribuidoresView(BaseModuleWindow):
         if parent:
             parent.show()
 
-    # -------------------------------------------------
     def _detener_hilo(self):
         if self.thread and isValid(self.thread):
             try:
@@ -84,18 +87,14 @@ class ListaDistribuidoresView(BaseModuleWindow):
 
     def closeEvent(self, event):
         self._detener_hilo()
-        # ✅ Al cerrar con la X, el menú principal queda detrás y vuelve a estar activo
-        if getattr(self, 'menu_controller', None):
+        if getattr(self, "menu_controller", None):
             try:
                 self.menu_controller.raise_()
                 self.menu_controller.activateWindow()
             except Exception:
                 pass
-
-        
         event.accept()
 
-    # -------------------------------------------------
     def _generar(self):
         if self._ocupado:
             return
@@ -119,7 +118,6 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self.worker.terminado.connect(self._finalizar)
         self.worker.error.connect(self._error)
 
-        # limpieza
         self.worker.terminado.connect(self.thread.quit)
         self.worker.error.connect(self.thread.quit)
         self.worker.terminado.connect(self.worker.deleteLater)
@@ -149,6 +147,11 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self.ui.tableSimples.setModel(modelo_simples)
         self.ui.tableVariados.setModel(modelo_variados)
 
+        for tabla in (self.ui.tableSimples, self.ui.tableVariados):
+            header = tabla.horizontalHeader()
+            header.setStretchLastSection(False)
+            header.setSectionResizeMode(COL_URL, QHeaderView.Stretch)
+
         self.ui.labelEstado.setText("Lista generada correctamente")
         self._generado = True
         self._set_ocupado(False)
@@ -160,7 +163,6 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._set_ocupado(False)
         mostrar_error(mensaje, self)
 
-    # -------------------------------------------------
     def _exportar(self):
         hoy = QDate.currentDate().toString("ddMMyyyy")
         nombre = f"lista_distribuidores_{hoy}.xlsx"
@@ -178,8 +180,6 @@ class ListaDistribuidoresView(BaseModuleWindow):
             except Exception as e:
                 mostrar_error(str(e), self)
 
-
-    # -------------------------------------------------
     def _limpiar_estado(self):
         self.ui.tableSimples.setModel(None)
         self.ui.tableVariados.setModel(None)
@@ -188,3 +188,34 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self.ui.labelEstado.setText("")
         self.ui.btnExportar.setEnabled(False)
         self._generado = False
+
+    # ✅ abrir URL al click
+    def _abrir_url_desde_click(self, index):
+        if not index.isValid() or index.column() != COL_URL:
+            return
+        url = (index.data(Qt.DisplayRole) or "").strip()
+        if url:
+            QDesktopServices.openUrl(QUrl(url))
+
+    # ✅ cursor mano SOLO cuando el mouse está sobre la columna URL
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.MouseMove:
+            tabla = None
+            if obj is self.ui.tableSimples.viewport():
+                tabla = self.ui.tableSimples
+            elif obj is self.ui.tableVariados.viewport():
+                tabla = self.ui.tableVariados
+
+            if tabla is not None:
+                idx = tabla.indexAt(event.pos())
+                if idx.isValid() and idx.column() == COL_URL:
+                    tabla.viewport().setCursor(QCursor(Qt.PointingHandCursor))
+                else:
+                    tabla.viewport().unsetCursor()
+
+        elif event.type() == QEvent.Leave:
+            # cuando sale el mouse del viewport
+            if obj in (self.ui.tableSimples.viewport(), self.ui.tableVariados.viewport()):
+                obj.unsetCursor()
+
+        return super().eventFilter(obj, event)

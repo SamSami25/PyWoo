@@ -1,6 +1,7 @@
 # app/actualizar_productos/controlador_actualizar_productos.py
 import csv
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from openpyxl import load_workbook, Workbook
@@ -30,13 +31,18 @@ COL_PRECIO_VENTA_NUEVO = 8
 COL_ESTADO = 9
 
 
+# ----------------------------
+# Utilidades
+# ----------------------------
 def _norm_header(h: Any) -> str:
+    """Normaliza encabezados: str, strip, upper, espacios simples."""
     if h is None:
         return ""
     return " ".join(str(h).strip().upper().split())
 
 
 def _leer_num_opcional(valor: Any) -> Optional[float]:
+    """Devuelve float o None si viene vacío. Acepta coma decimal."""
     if valor is None:
         return None
     txt = str(valor).strip()
@@ -50,6 +56,10 @@ def _leer_num_opcional(valor: Any) -> Optional[float]:
 
 
 def _mapear_columna(headers: List[str], aliases: List[str], requerido: bool, nombre_para_error: str) -> Optional[int]:
+    """
+    Devuelve índice de la primera coincidencia entre aliases.
+    Si requerido=True, lanza error si no existe.
+    """
     aliases_norm = [_norm_header(a) for a in aliases]
     for a in aliases_norm:
         if a in headers:
@@ -63,13 +73,68 @@ def _mapear_columna(headers: List[str], aliases: List[str], requerido: bool, nom
 
 
 def _validar_negrita_excel(ws, idxs_requeridos: List[int], nombres_requeridos: List[str]):
+    """Valida que los encabezados requeridos (fila 1) estén en negrita."""
     for idx, nombre in zip(idxs_requeridos, nombres_requeridos):
-        celda = ws.cell(row=1, column=idx + 1)
+        celda = ws.cell(row=1, column=idx + 1)  # openpyxl usa 1-based
         bold = bool(getattr(celda.font, "bold", False))
         if not bold:
             raise ValueError(f"En Excel, el encabezado '{nombre}' debe estar en NEGRITA.")
 
 
+def _to_decimal(x: Any) -> Decimal:
+    """Convierte a Decimal seguro (acepta coma)."""
+    if x is None:
+        return Decimal("0")
+    s = str(x).strip()
+    if not s:
+        return Decimal("0")
+    s = s.replace(",", ".")
+    try:
+        return Decimal(s)
+    except InvalidOperation:
+        return Decimal("0")
+
+
+def _fmt_money(x: Any) -> str:
+    """
+    Máximo 2 decimales (sin basura flotante).
+    - 12.00 -> 12
+    - 6.50 -> 6.5
+    - 1.7391 -> 1.74
+    """
+    d = _to_decimal(x).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    s = format(d, "f")
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
+    return s
+
+
+def _get_meta(meta_data: List[dict], key: str) -> Optional[str]:
+    for m in meta_data or []:
+        if m.get("key") == key:
+            v = m.get("value")
+            return None if v is None else str(v)
+    return None
+
+
+def _get_purchase_cost(product: dict) -> Decimal:
+    """
+    Prioridad multi-tienda:
+      1) _purchase_price (ATUM Inventory)
+      2) _wc_cog_cost    (Cost of Goods - WPFactory)
+      3) purchase_price  (legacy/custom)
+    """
+    meta = product.get("meta_data", []) or []
+    for k in ("_purchase_price", "_wc_cog_cost", "purchase_price"):
+        v = _get_meta(meta, k)
+        if v is not None and _to_decimal(v) > 0:
+            return _to_decimal(v)
+    return Decimal("0")
+
+
+# ----------------------------
+# Modelo de datos
+# ----------------------------
 @dataclass
 class RegistroProducto:
     sku: str
@@ -84,8 +149,8 @@ class RegistroProducto:
     estado: str = ""
 
     _id: Optional[int] = None
-    _tipo: str = "simple"          # simple | variable | variation
-    _parent_id: Optional[int] = None  # ✅ necesario para variation
+    _parent_id: Optional[int] = None
+    _tipo: str = "simple"  # simple | variation | otro
 
     def como_fila(self) -> List[Any]:
         return [
@@ -97,7 +162,7 @@ class RegistroProducto:
             self.precio_actual,
             self.precio_compra,
             self.precio_venta_actual,
-            "" if self.precio_venta_nuevo is None else self.precio_venta_nuevo,
+            "" if self.precio_venta_nuevo is None else _fmt_money(self.precio_venta_nuevo),
             self.estado,
         ]
 
@@ -168,7 +233,12 @@ class ModeloActualizarProductos(QAbstractTableModel):
         except Exception:
             return False
 
+        # Recalcular estado básico
+        r.estado = "Pendiente" if r.tiene_cambios() else "Sin cambio"
+
         self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        idx_estado = self.index(index.row(), COL_ESTADO)
+        self.dataChanged.emit(idx_estado, idx_estado, [Qt.DisplayRole])
         return True
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
@@ -198,7 +268,15 @@ class ControladorActualizarProductos:
         self.modelo_simples: Optional[ModeloActualizarProductos] = None
         self.modelo_variados: Optional[ModeloActualizarProductos] = None
 
+    # -------- CARGAR ARCHIVO --------
     def cargar_archivo(self, ruta: str) -> Dict[str, Dict[str, Optional[float]]]:
+        """
+        Devuelve:
+        sku -> {'STOCK': Optional[int], 'PRECIO': Optional[float]}
+        - Si viene vacío: None (sin cambio)
+        - Acepta alias de encabezados
+        - En Excel valida encabezados requeridos en NEGRITA.
+        """
         data: Dict[str, Dict[str, Optional[float]]] = {}
 
         ruta_lower = ruta.lower()
@@ -269,14 +347,13 @@ class ControladorActualizarProductos:
 
         return data
 
-    # ✅ AHORA incluye variaciones
+    # -------- PROCESAR --------
     def procesar_productos(
         self,
         datos_archivo: Dict[str, Dict[str, Optional[float]]],
         callback: Optional[Callable[[int, str], None]] = None
     ) -> Tuple[ModeloActualizarProductos, ModeloActualizarProductos]:
-
-        productos = self.cliente.obtener_productos(incluir_variaciones=True)
+        productos = self.cliente.obtener_productos()
 
         self.simples.clear()
         self.variados.clear()
@@ -290,30 +367,92 @@ class ControladorActualizarProductos:
             stock_nuevo = excel.get("STOCK") if excel else None
             precio_nuevo = excel.get("PRECIO") if excel else None
 
-            tipo = (p.get("type") or "simple")
-            tipo = str(tipo).strip().lower()
+            tipo = str(p.get("type") or "simple").strip().lower()
 
-            registro = RegistroProducto(
-                sku=sku,
-                nombre=p.get("name", ""),
-                categoria=", ".join(c.get("name", "") for c in (p.get("categories") or [])),
-                stock_actual=p.get("stock_quantity", 0),
-                stock_nuevo=stock_nuevo,
-                precio_actual=p.get("price", 0),
-                precio_compra=p.get("purchase_price", 0),
-                precio_venta_actual=p.get("regular_price", p.get("price", 0)),
-                precio_venta_nuevo=precio_nuevo,
-                estado="",
-                _id=p.get("id"),
-                _tipo=tipo,
-                _parent_id=p.get("parent_id"),
-            )
-
-            # simple -> hoja simples
-            # variable y variation -> hoja variados
-            if registro._tipo == "simple":
+            # 1) Productos simples
+            if tipo == "simple":
+                costo = _get_purchase_cost(p)
+                registro = RegistroProducto(
+                    sku=sku,
+                    nombre=p.get("name", ""),
+                    categoria=", ".join(c.get("name", "") for c in (p.get("categories") or [])),
+                    stock_actual=p.get("stock_quantity", 0),
+                    stock_nuevo=stock_nuevo,
+                    precio_actual=_fmt_money(p.get("price", 0)),
+                    precio_compra=_fmt_money(costo),
+                    precio_venta_actual=_fmt_money(p.get("regular_price", p.get("price", 0))),
+                    precio_venta_nuevo=precio_nuevo,
+                    estado="",
+                    _id=p.get("id"),
+                    _parent_id=None,
+                    _tipo="simple",
+                )
+                registro.estado = "Pendiente" if registro.tiene_cambios() else "Sin cambio"
                 self.simples.append(registro)
+
+            # 2) Productos variables (SKU en variaciones)
+            elif tipo == "variable":
+                parent_id = p.get("id")
+                parent_categoria = ", ".join(c.get("name", "") for c in (p.get("categories") or []))
+                parent_name = p.get("name", "")
+
+                variaciones = self.cliente.obtener_variaciones_producto(int(parent_id)) if parent_id else []
+                for v in variaciones:
+                    sku_v = (v.get("sku") or "").strip()
+                    if not sku_v:
+                        sku_v = ""
+
+                    excel_v = datos_archivo.get(sku_v) if sku_v else None
+                    stock_v = excel_v.get("STOCK") if excel_v else None
+                    precio_v = excel_v.get("PRECIO") if excel_v else None
+
+                    attrs = []
+                    for a in (v.get("attributes") or []):
+                        n = a.get("name") or ""
+                        o = a.get("option") or ""
+                        if n and o:
+                            attrs.append(f"{n}: {o}")
+                    variacion_txt = " | ".join(attrs)
+                    nombre_mostrar = parent_name if not variacion_txt else f"{parent_name} ({variacion_txt})"
+
+                    costo_v = _get_purchase_cost(v)
+
+                    registro_v = RegistroProducto(
+                        sku=sku_v,
+                        nombre=nombre_mostrar,
+                        categoria=parent_categoria,
+                        stock_actual=v.get("stock_quantity", 0),
+                        stock_nuevo=stock_v,
+                        precio_actual=_fmt_money(v.get("price", 0)),
+                        precio_compra=_fmt_money(costo_v),
+                        precio_venta_actual=_fmt_money(v.get("regular_price", v.get("price", 0))),
+                        precio_venta_nuevo=precio_v,
+                        estado="",
+                        _id=v.get("id"),
+                        _parent_id=parent_id,
+                        _tipo="variation",
+                    )
+                    registro_v.estado = "Pendiente" if registro_v.tiene_cambios() else "Sin cambio"
+                    self.variados.append(registro_v)
+
+            # Otros tipos
             else:
+                costo = _get_purchase_cost(p)
+                registro = RegistroProducto(
+                    sku=sku,
+                    nombre=p.get("name", ""),
+                    categoria=", ".join(c.get("name", "") for c in (p.get("categories") or [])),
+                    stock_actual=p.get("stock_quantity", 0),
+                    stock_nuevo=stock_nuevo,
+                    precio_actual=_fmt_money(p.get("price", 0)),
+                    precio_compra=_fmt_money(costo),
+                    precio_venta_actual=_fmt_money(p.get("regular_price", p.get("price", 0))),
+                    precio_venta_nuevo=precio_nuevo,
+                    estado=f"⚠ No editable ({tipo})",
+                    _id=p.get("id"),
+                    _parent_id=None,
+                    _tipo=tipo,
+                )
                 self.variados.append(registro)
 
             if callback:
@@ -323,6 +462,7 @@ class ControladorActualizarProductos:
         self.modelo_variados = ModeloActualizarProductos(self.variados)
         return self.modelo_simples, self.modelo_variados
 
+    # -------- APLICAR --------
     def aplicar_cambios(self, callback: Optional[Callable[[int, str], None]] = None):
         trabajos: List[Tuple[ModeloActualizarProductos, int, RegistroProducto]] = []
 
@@ -343,40 +483,46 @@ class ControladorActualizarProductos:
                 modelo.actualizar_estado(row, "❌ Sin ID")
                 continue
 
-            try:
-                # ✅ simple
-                if r._tipo == "simple":
-                    self.cliente.actualizar_producto(
-                        producto_id=int(r._id),
-                        stock=r.stock_nuevo if r.stock_nuevo is not None else None,
-                        precio=r.precio_venta_nuevo if r.precio_venta_nuevo is not None else None,
-                    )
-                    modelo.actualizar_estado(row, "✔ Actualizado")
-
-                # ✅ variation (necesita parent_id)
-                elif r._tipo == "variation":
-                    if not r._parent_id:
-                        modelo.actualizar_estado(row, "❌ Sin parent_id")
-                    else:
+            if r._tipo == "variation":
+                if not r._parent_id:
+                    modelo.actualizar_estado(row, "❌ Sin ID padre")
+                else:
+                    try:
                         self.cliente.actualizar_variacion(
-                            parent_id=int(r._parent_id),
+                            producto_id=int(r._parent_id),
                             variacion_id=int(r._id),
                             stock=r.stock_nuevo if r.stock_nuevo is not None else None,
                             precio=r.precio_venta_nuevo if r.precio_venta_nuevo is not None else None,
                         )
-                        modelo.actualizar_estado(row, "✔ Variación actualizada")
+                        modelo.actualizar_estado(row, "OK Actualizado")
+                    except Exception as e:
+                        modelo.actualizar_estado(row, f"❌ {str(e)[:60]}")
+                if callback:
+                    callback(int((i / total) * 100), f"Aplicando cambios {i} de {total}")
+                continue
 
-                # variable padre: no se actualiza directo (depende de tienda), pero ya tienes variaciones
-                else:
-                    modelo.actualizar_estado(row, "ℹ Variable (se actualiza por variaciones)")
+            if r._tipo != "simple":
+                modelo.actualizar_estado(row, f"⚠ No editable ({r._tipo})")
+                if callback:
+                    callback(int((i / total) * 100), f"Aplicando cambios {i} de {total}")
+                continue
 
+            try:
+                self.cliente.actualizar_producto(
+                    producto_id=int(r._id),
+                    stock=r.stock_nuevo if r.stock_nuevo is not None else None,
+                    precio=r.precio_venta_nuevo if r.precio_venta_nuevo is not None else None,
+                )
+                modelo.actualizar_estado(row, "OK Actualizado")
             except Exception as e:
-                modelo.actualizar_estado(row, f"❌ {str(e)[:80]}")
+                modelo.actualizar_estado(row, f"❌ {str(e)[:60]}")
 
             if callback:
                 callback(int((i / total) * 100), f"Aplicando cambios {i} de {total}")
 
+    # -------- EXPORTAR --------
     def exportar_excel(self, ruta: str):
+        """Exporta en DOS pestañas: Productos Simples / Productos Variados."""
         wb = Workbook()
 
         ws1 = wb.active

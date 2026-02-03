@@ -1,7 +1,7 @@
 # app/actualizar_productos/actualizar_productos_view.py
 import os
 
-from PySide6.QtCore import QThread, QDate
+from PySide6.QtCore import QThread, QDate, Qt
 from PySide6.QtWidgets import QFileDialog, QHeaderView
 from shiboken6 import isValid
 
@@ -25,13 +25,11 @@ class ActualizarProductosView(BaseModuleWindow):
     """
 
     def __init__(self, parent=None):
-        # ✅ menu_controller = parent (MenuPrincipalView)
         super().__init__(menu_controller=parent, parent=parent)
 
         self.ui = Ui_ActualizarProductos()
         self.ui.setupUi(self)
 
-        # ✅ algunos .ui pueden pisar el menú común
         self._build_menu()
 
         self.controlador = ControladorActualizarProductos()
@@ -44,7 +42,7 @@ class ActualizarProductosView(BaseModuleWindow):
 
         self.dialogo = None
         self._procesado = False
-        self._ocupado = False  # evita doble click / doble hilo
+        self._ocupado = False
 
         self._configurar_tablas()
         self._configurar_estado()
@@ -54,10 +52,12 @@ class ActualizarProductosView(BaseModuleWindow):
     # UI
     # ----------------------------
     def _configurar_tablas(self):
+        # ✅ Ajuste para que NO sobre espacio a la derecha y se adapte a la ventana
         for tabla in (self.ui.tableSimples, self.ui.tableVariados):
             header = tabla.horizontalHeader()
-            header.setSectionResizeMode(QHeaderView.Interactive)
-            header.setStretchLastSection(False)
+            header.setSectionResizeMode(QHeaderView.Stretch)
+            header.setStretchLastSection(True)
+            tabla.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def _configurar_estado(self):
         self.ui.btnExportar.setEnabled(False)
@@ -65,7 +65,6 @@ class ActualizarProductosView(BaseModuleWindow):
         self.ui.labelEstado.setText("")
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
-        # labelArchivo ya viene del .ui (Archivo: (ninguno))
 
     def _set_ocupado(self, ocupado: bool):
         self._ocupado = ocupado
@@ -111,15 +110,12 @@ class ActualizarProductosView(BaseModuleWindow):
 
     def closeEvent(self, event):
         self._detener_hilos()
-        # ✅ Al cerrar con la X, el menú principal queda detrás y vuelve a estar activo
-        if getattr(self, 'menu_controller', None):
+        if getattr(self, "menu_controller", None):
             try:
                 self.menu_controller.raise_()
                 self.menu_controller.activateWindow()
             except Exception:
                 pass
-
-        
         event.accept()
 
     # ----------------------------
@@ -133,7 +129,6 @@ class ActualizarProductosView(BaseModuleWindow):
             self,
             "Seleccionar archivo",
             "",
-            # ⚠️ OpenPyXL NO soporta .xls → lo quitamos para evitar errores
             "Excel (*.xlsx);;CSV (*.csv)"
         )
         if not ruta:
@@ -174,7 +169,6 @@ class ActualizarProductosView(BaseModuleWindow):
         self.worker.terminado.connect(self._finalizar_proceso)
         self.worker.error.connect(self._error)
 
-        # Limpieza
         self.worker.terminado.connect(self.thread.quit)
         self.worker.error.connect(self.thread.quit)
         self.worker.terminado.connect(self.worker.deleteLater)
@@ -212,7 +206,6 @@ class ActualizarProductosView(BaseModuleWindow):
         self.worker_aplicar.terminado.connect(self._finalizar_aplicar)
         self.worker_aplicar.error.connect(self._error)
 
-        # Limpieza
         self.worker_aplicar.terminado.connect(self.thread_aplicar.quit)
         self.worker_aplicar.error.connect(self.thread_aplicar.quit)
         self.worker_aplicar.terminado.connect(self.worker_aplicar.deleteLater)
@@ -265,7 +258,6 @@ class ActualizarProductosView(BaseModuleWindow):
     # ----------------------------
     # Exportar
     # ----------------------------
-
     def _exportar(self):
         if self._ocupado:
             return
@@ -286,4 +278,3 @@ class ActualizarProductosView(BaseModuleWindow):
                 mostrar_info("Archivo exportado correctamente.", self)
             except Exception as e:
                 mostrar_error(str(e), self)
-
