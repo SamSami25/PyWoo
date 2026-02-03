@@ -1,8 +1,11 @@
 # app/menu/menu_view.py
 from __future__ import annotations
 
+import os
+
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QDialog
-from PySide6.QtCore import QEvent
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt
 
 from app.menu.ui.ui_view_menu import Ui_MenuPrincipal
 from app.core.configuracion import Configuracion
@@ -64,8 +67,8 @@ class MenuPrincipalView(QMainWindow):
         self.ventana.show()
         self.ventana.raise_()
         self.ventana.activateWindow()
+
         # ✅ Mantener el menú principal detrás (no lo escondemos)
-        # self.hide()
         self.ventana.destroyed.connect(self.show)
 
     def _ventas(self):
@@ -85,12 +88,40 @@ class MenuPrincipalView(QMainWindow):
         self._abrir_modulo(ListaDistribuidoresView)
 
     def _acerca_de(self):
-        QMessageBox.information(
-            self,
-            "Acerca de",
-            "UNIVERSIDAD POLITÉCNICA\n"
-            "Proyecto: PyWoo\n"
-            "Autor: Sami Gabriela Aldaz Cabrera\n"
-            "Versión: 2\n"
-            "Integración WooCommerce"
+
+        ruta_imagen = os.path.join(
+            os.path.dirname(__file__),
+            "..", "assets", "images", "sello_ups.jpg"
         )
+        ruta_imagen = os.path.normpath(ruta_imagen)
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Acerca de")
+        msg.setTextFormat(Qt.RichText)
+
+        msg.setText("""
+            <div style="text-align:center;">
+                <h3 style="margin:0; padding:0;">
+                    <b>UNIVERSIDAD POLITÉCNICA SALESIANA</b>
+                </h3>
+                <p style="margin:6px 0 0 0;"><b>Proyecto:</b> PyWoo</p>
+                <p style="margin:4px 0;"><b>Autor:</b> Sami Gabriela Aldaz Cabrera</p>
+                <p style="margin:4px 0;"><b>Versión:</b> 2</p>
+                <p style="margin:10px 0 0 0;">Integración WooCommerce</p>
+            </div>
+        """)
+
+        if os.path.exists(ruta_imagen):
+            pixmap = QPixmap(ruta_imagen)
+            if not pixmap.isNull():
+                pixmap = pixmap.scaled(
+                    120, 120,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                )
+                msg.setIconPixmap(pixmap)
+        else:
+            pass
+
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec()
