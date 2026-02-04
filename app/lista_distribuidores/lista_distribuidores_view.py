@@ -104,9 +104,9 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._set_ocupado(True)
 
         self.dialogo = ProcessDialog(self)
-        self.dialogo.set_titulo("Generando Lista de Distribuidores")
+        self.dialogo.set_titulo("Generando Lista de Productos para Distribuidores")
         self.dialogo.reset()
-        self.dialogo.set_mensaje("Generando lista de distribuidores...")
+        self.dialogo.set_mensaje("Generando lista de productos para distribuidores...")
         self.dialogo.show()
 
         self.thread = QThread(self)
@@ -156,7 +156,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._generado = True
         self._set_ocupado(False)
 
-        mostrar_info("Lista de distribuidores generada correctamente.", self)
+        mostrar_info("Lista de productos para distribuidores generada correctamente.", self)
 
     def _error(self, mensaje):
         self._cerrar_dialogo()
@@ -169,7 +169,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
 
         ruta, _ = QFileDialog.getSaveFileName(
             self,
-            "Exportar lista de distribuidores",
+            "Exportar lista de productos para distribuidores",
             nombre,
             "Excel (*.xlsx)"
         )

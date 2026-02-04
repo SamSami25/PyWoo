@@ -68,7 +68,6 @@ class MenuPrincipalView(QMainWindow):
         self.ventana.raise_()
         self.ventana.activateWindow()
 
-        # ✅ Mantener el menú principal detrás (no lo escondemos)
         self.ventana.destroyed.connect(self.show)
 
     def _ventas(self):
@@ -88,10 +87,9 @@ class MenuPrincipalView(QMainWindow):
         self._abrir_modulo(ListaDistribuidoresView)
 
     def _acerca_de(self):
-
         ruta_imagen = os.path.join(
             os.path.dirname(__file__),
-            "..", "assets", "images", "sello_ups.jpg"
+            "..", "..", "assets", "images", "sello_ups.jpg"
         )
         ruta_imagen = os.path.normpath(ruta_imagen)
 
@@ -114,14 +112,35 @@ class MenuPrincipalView(QMainWindow):
         if os.path.exists(ruta_imagen):
             pixmap = QPixmap(ruta_imagen)
             if not pixmap.isNull():
-                pixmap = pixmap.scaled(
-                    120, 120,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
+                pixmap = pixmap.scaled(120, 120, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 msg.setIconPixmap(pixmap)
-        else:
-            pass
 
         msg.setStandardButtons(QMessageBox.Ok)
+
+        btn_ok = msg.button(QMessageBox.Ok)
+        if btn_ok:
+            btn_ok.setObjectName("btnOk")
+            btn_ok.setCursor(Qt.PointingHandCursor)
+
+        msg.setStyleSheet("""
+            QPushButton#btnOk {
+                background-color: #1E73F1;
+                color: white;
+                border: none;
+                padding: 8px 20px;
+                border-radius: 10px;
+                font-weight: 700;
+                min-width: 90px;
+            }
+            QPushButton#btnOk:hover {
+                background-color: #155CC5;
+            }
+            QPushButton#btnOk:pressed {
+                background-color: #0F4AA6;
+            }
+            QPushButton#btnOk:focus {
+                outline: none;
+            }
+        """)
+
         msg.exec()

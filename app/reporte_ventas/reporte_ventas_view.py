@@ -34,6 +34,8 @@ class ReporteVentasView(BaseModuleWindow):
         self.worker = None
         self.dialogo: ProcessDialog | None = None
 
+        self._cancel_requested = False
+
         self._configurar()
         self._conectar()
 
@@ -45,12 +47,10 @@ class ReporteVentasView(BaseModuleWindow):
         self.ui.dateDesde.setDate(hoy.addYears(-1))
         self.ui.dateHasta.setDate(hoy)
 
-        # Solo tabla Pedidos (tableSimples)
         header = self.ui.tableSimples.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         header.setStretchLastSection(True)
 
-        # Si existe tableVariados, la ocultamos (por compatibilidad con tu .ui)
         if hasattr(self.ui, "tableVariados"):
             try:
                 self.ui.tableVariados.hide()
@@ -58,8 +58,6 @@ class ReporteVentasView(BaseModuleWindow):
             except Exception:
                 pass
 
-        # ✅ Quitar el "cuadrito" (tab vacío) al lado de "Pedidos"
-        # (normalmente es una pestaña sin texto en el QTabWidget)
         if hasattr(self.ui, "tabWidget"):
             try:
                 for idx in reversed(range(self.ui.tabWidget.count())):
@@ -73,7 +71,6 @@ class ReporteVentasView(BaseModuleWindow):
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
 
-        # Si tienes un QLineEdit para "Nombre Archivo", lo dejamos solo como info
         if hasattr(self.ui, "txtNombreArchivo"):
             self.ui.txtNombreArchivo.setText("")
 
@@ -83,16 +80,36 @@ class ReporteVentasView(BaseModuleWindow):
         self.ui.btnVolver.clicked.connect(self._volver_menu)
 
     # --------------------------------------------------
+    # Validaciones
+    # --------------------------------------------------
+    def _validar_rango_fechas(self, desde: date, hasta: date) -> bool:
+        hoy = QDate.currentDate().toPython()
+
+        if desde > hoy or hasta > hoy:
+            mostrar_error(
+                "No puedes seleccionar fechas futuras. El reporte solo puede generarse hasta hoy.",
+                self,
+            )
+            return False
+
+        if desde > hasta:
+            mostrar_error("La fecha 'Desde' no puede ser mayor que la fecha 'Hasta'.", self)
+            return False
+
+        return True
+
+    # --------------------------------------------------
     # Navegación
     # --------------------------------------------------
     def _volver_menu(self):
+        self._cancelar_si_hay_proceso()
         self._detener_hilo()
         self.close()
         if self.menu_controller:
             self.menu_controller.show()
 
     def closeEvent(self, event):
-        # ✅ Al cerrar con X: el menú debe seguir detrás del módulo
+        self._cancelar_si_hay_proceso()
         self._detener_hilo()
         try:
             if self.menu_controller:
@@ -115,6 +132,19 @@ class ReporteVentasView(BaseModuleWindow):
         self.thread = None
         self.worker = None
 
+    def _cancelar_si_hay_proceso(self):
+        # ✅ Marca cancelación solo cuando el usuario cancela (o cerramos por navegación)
+        self._cancel_requested = True
+
+        # ✅ Solo cerrar el diálogo si está abierto (pero sin disparar "cancel" por cierre normal)
+        if self.dialogo:
+            try:
+                # esto lo cierra como "cancelado"
+                self.dialogo.reject()
+            except Exception:
+                pass
+            self.dialogo = None
+
     # --------------------------------------------------
     # Generar
     # --------------------------------------------------
@@ -124,19 +154,36 @@ class ReporteVentasView(BaseModuleWindow):
         desde = self.ui.dateDesde.date().toPython()
         hasta = self.ui.dateHasta.date().toPython()
 
+        if not self._validar_rango_fechas(desde, hasta):
+            return
+
+        # ✅ Nueva ejecución = no está cancelado
+        self._cancel_requested = False
+
         self._generado = False
         self.ui.btnExportar.setEnabled(False)
         self.ui.tableSimples.setModel(None)
+        self.ui.labelEstado.setText("")
+        self.ui.progressBar.setValue(0)
+        self.ui.lblProcesando.setText("")
 
-        # diálogo con barra indeterminada al inicio
         self.dialogo = ProcessDialog(self)
         self.dialogo.set_titulo("Generando Reporte de Ventas")
         self.dialogo.reset()
         self.dialogo.set_mensaje("Generando reporte...")
+
+        # ✅ SOLO si el usuario cancela/cierra (reject)
+        self.dialogo.rejected.connect(self._cancelar_si_hay_proceso)
+
         self.dialogo.show()
 
         self.thread = QThread(self)
-        self.worker = WorkerReporteVentas(self.controlador, desde, hasta)
+        self.worker = WorkerReporteVentas(
+            self.controlador,
+            desde,
+            hasta,
+            should_cancel=lambda: self._cancel_requested,
+        )
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.ejecutar)
@@ -144,7 +191,6 @@ class ReporteVentasView(BaseModuleWindow):
         self.worker.terminado.connect(self._finalizar)
         self.worker.error.connect(self._error)
 
-        # limpieza segura
         self.worker.terminado.connect(self.thread.quit)
         self.worker.error.connect(self.thread.quit)
         self.worker.terminado.connect(self.worker.deleteLater)
@@ -162,11 +208,20 @@ class ReporteVentasView(BaseModuleWindow):
             self.dialogo.set_mensaje(mensaje)
 
     def _finalizar(self, modelo_pedidos, _modelo_vacio):
+        # ✅ OJO: cerrar como "OK" para NO disparar rejected/cancel
         if self.dialogo:
-            self.dialogo.close()
+            try:
+                self.dialogo.accept()
+            except Exception:
+                pass
             self.dialogo = None
 
-        # ✅ Solo una pestaña "Pedidos"
+        if self._cancel_requested:
+            self.ui.labelEstado.setText("")
+            self.ui.btnExportar.setEnabled(False)
+            self._generado = False
+            return
+
         self.ui.tableSimples.setModel(modelo_pedidos)
 
         self.ui.labelEstado.setText("Reporte generado correctamente")
@@ -177,8 +232,20 @@ class ReporteVentasView(BaseModuleWindow):
 
     def _error(self, mensaje):
         if self.dialogo:
-            self.dialogo.close()
+            try:
+                # si hubo error, cerramos como cancelado
+                self.dialogo.reject()
+            except Exception:
+                pass
             self.dialogo = None
+
+        # Cancelación silenciosa
+        if mensaje == "__CANCELADO__" or self._cancel_requested:
+            self.ui.labelEstado.setText("")
+            self.ui.btnExportar.setEnabled(False)
+            self._generado = False
+            return
+
         mostrar_error(mensaje, self)
 
     # --------------------------------------------------
@@ -192,7 +259,6 @@ class ReporteVentasView(BaseModuleWindow):
         desde = self.ui.dateDesde.date().toPython()
         hasta = self.ui.dateHasta.date().toPython()
 
-        # ✅ nombre solicitado: ventas_DESDE(ddmmyyyy)_HASTA(ddmmyyyy).xlsx
         nombre_defecto = f"ventas_{_fmt_ddmmyyyy(desde)}_{_fmt_ddmmyyyy(hasta)}.xlsx"
 
         ruta, _ = QFileDialog.getSaveFileName(

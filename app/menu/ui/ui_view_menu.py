@@ -25,7 +25,7 @@ class Ui_MenuPrincipal(object):
     def setupUi(self, MenuPrincipal):
         if not MenuPrincipal.objectName():
             MenuPrincipal.setObjectName(u"MenuPrincipal")
-        MenuPrincipal.resize(754, 532)
+        MenuPrincipal.resize(833, 584)
         icon = QIcon()
         icon.addFile(u":/assets/icons/label_reporte_ventas2.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MenuPrincipal.setWindowIcon(icon)
@@ -107,7 +107,7 @@ class Ui_MenuPrincipal(object):
         MenuPrincipal.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MenuPrincipal)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 754, 26))
+        self.menubar.setGeometry(QRect(0, 0, 833, 26))
         self.menuWoo = QMenu(self.menubar)
         self.menuWoo.setObjectName(u"menuWoo")
         self.menuModulos = QMenu(self.menubar)

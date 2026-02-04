@@ -8,12 +8,7 @@ from app.core.ui.ui_proceso import Ui_ProcessDialog
 
 
 class ProcessDialog(QDialog):
-    """Diálogo de progreso reutilizable para todo el sistema.
-
-    Soporta:
-    - Modo indeterminado (barra animada) mientras no hay porcentaje real.
-    - Modo determinado cuando recibes valores 0..100.
-    """
+    """Diálogo de progreso reutilizable para todo el sistema."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -21,22 +16,23 @@ class ProcessDialog(QDialog):
         self.ui = Ui_ProcessDialog()
         self.ui.setupUi(self)
 
-        # 🔒 Modal real (bloquea la ventana padre)
         self.setWindowModality(Qt.ApplicationModal)
 
-        # 🎨 FORZAR VISIBILIDAD DEL HEADER
         self.ui.frameHeader.setMinimumHeight(90)
         self.ui.lblTitulo.setMinimumHeight(32)
 
-        # 🎯 Alineación clara
         self.ui.lblTitulo.setAlignment(Qt.AlignCenter)
         self.ui.lblSubtitulo.setAlignment(Qt.AlignCenter)
 
-        # Estado inicial
         self.reset()
 
-        # Cancelar solo cierra el diálogo (no mata procesos)
-        self.ui.btnCancelar.clicked.connect(self.close)
+        # ✅ Cancelar = reject (así se detecta como cancel real)
+        self.ui.btnCancelar.clicked.connect(self.reject)
+
+    def closeEvent(self, event):
+        # ✅ La X también es cancel real
+        self.reject()
+        event.ignore()
 
     # ------------------------
     # API pública
@@ -45,17 +41,14 @@ class ProcessDialog(QDialog):
         self.ui.lblTitulo.setText(texto)
 
     def set_indeterminado(self, activo: bool = True):
-        """Activa/desactiva el modo animado."""
         if activo:
-            # 0..0 => modo “busy” animado
-            self.ui.progressBar.setRange(0, 0)
+            self.ui.progressBar.setRange(0, 0)      # animado
             self.ui.progressBar.setTextVisible(False)
         else:
             self.ui.progressBar.setRange(0, 100)
             self.ui.progressBar.setTextVisible(False)
 
     def set_progreso(self, valor: int):
-        # En cuanto llega un % real, pasamos a modo determinado
         if self.ui.progressBar.maximum() == 0:
             self.set_indeterminado(False)
         self.ui.progressBar.setValue(int(valor))

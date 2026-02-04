@@ -10,6 +10,9 @@ import xlsxwriter
 from app.core.cliente_woocommerce import ClienteWooCommerce
 
 
+# ---------------------------------------
+# Columnas INTERNAS (para la tabla del app)
+# ---------------------------------------
 HEADERS_INTERNAL = [
     "SKU",
     "NOMBRE DEL PRODUCTO",
@@ -25,7 +28,44 @@ HEADERS_INTERNAL = [
     "URL",
 ]
 
-COL_URL = HEADERS_INTERNAL.index("URL")
+COL_SKU = 0
+COL_NOMBRE = 1
+COL_VARIACION = 2
+COL_STOCK = 3
+COL_PVP = 4
+COL_PRECIO_COMPRA = 5
+COL_GANANCIA = 6
+COL_DESC_PCT = 7
+COL_DESC_VAL = 8
+COL_PVD = 9
+COL_OBS = 10
+COL_URL = 11
+
+
+# ---------------------------------------
+# Columnas EXPORT (para distribuidores)
+# ---------------------------------------
+HEADERS_EXPORT = [
+    "SKU",
+    "NOMBRE DEL PRODUCTO",
+    "VARIACIÓN",
+    "STOCK",
+    "PVP",
+    "PVD",
+    "OBSERVACIÓN",
+    "URL",
+]
+
+EXPORT_COLS_MAP = [
+    COL_SKU,
+    COL_NOMBRE,
+    COL_VARIACION,
+    COL_STOCK,
+    COL_PVP,
+    COL_PVD,
+    COL_OBS,
+    COL_URL,
+]
 
 
 def _to_float(x: Any) -> float:
@@ -56,12 +96,29 @@ def _safe_str(x: Any) -> str:
     return "" if x is None else str(x)
 
 
+def _fmt_2_dec_trim(x: Any) -> str:
+    """
+    Formatea a máximo 2 decimales.
+    - 0.36 -> "0.36"
+    - 2.0 -> "2"
+    - 2.50 -> "2.5"
+    """
+    try:
+        v = float(x)
+    except Exception:
+        return _safe_str(x)
+
+    s = f"{v:.2f}".rstrip("0").rstrip(".")
+    return s
+
+
 class ModeloTablaDistribuidores(QAbstractTableModel):
     """
     - robusto (no revienta con None)
     - centrado (URL alineada a la izquierda)
     - headers en negrita
     - URL: azul + subrayado + tooltip (cursor se maneja en el view)
+    - GANANCIA: máximo 2 decimales (visualmente)
     """
 
     def __init__(self, datos: List[List[Any]]):
@@ -93,6 +150,9 @@ class ModeloTablaDistribuidores(QAbstractTableModel):
             return Qt.AlignCenter
 
         if role == Qt.DisplayRole:
+            # ✅ GANANCIA con máximo 2 decimales (solo visual)
+            if col == COL_GANANCIA:
+                return _fmt_2_dec_trim(valor)
             return _safe_str(valor)
 
         if col == COL_URL:
@@ -164,7 +224,7 @@ class ControladorListaDistribuidores:
         pvp = _to_float(p.get("price"))
         p_compra = _to_float(p.get("purchase_price"))
 
-        ganancia = round(1 - (p_compra / pvp), 4) if pvp > 0 else 0.0
+        ganancia = (1 - (p_compra / pvp)) if pvp > 0 else 0.0
         descuento_pct = self._por_descuento(ganancia)
         descuento_valor = round(descuento_pct * pvp, 2)
         pvd = round(pvp - descuento_valor, 2)
@@ -176,7 +236,7 @@ class ControladorListaDistribuidores:
             stock,
             round(pvp, 2),
             round(p_compra, 2),
-            ganancia,
+            round(ganancia, 4),  # interno puede quedarse con 4 para cálculos, pero se muestra 2 dec.
             round(descuento_pct * 100, 2),
             descuento_valor,
             pvd,
@@ -202,7 +262,7 @@ class ControladorListaDistribuidores:
             pvp = _to_float(v.get("price") or v.get("regular_price"))
             p_compra = _to_float(v.get("purchase_price"))
 
-            ganancia = round(1 - (p_compra / pvp), 4) if pvp > 0 else 0.0
+            ganancia = (1 - (p_compra / pvp)) if pvp > 0 else 0.0
             descuento_pct = self._por_descuento(ganancia)
             descuento_valor = round(descuento_pct * pvp, 2)
             pvd = round(pvp - descuento_valor, 2)
@@ -210,6 +270,7 @@ class ControladorListaDistribuidores:
             variacion = " | ".join(
                 f"{(a.get('name') or '').strip()}: {(a.get('option') or '').strip()}"
                 for a in (v.get("attributes") or [])
+                if (a.get("name") or "").strip() and (a.get("option") or "").strip()
             ) or "Variación"
 
             self.variados.append([
@@ -219,7 +280,7 @@ class ControladorListaDistribuidores:
                 stock,
                 round(pvp, 2),
                 round(p_compra, 2),
-                ganancia,
+                round(ganancia, 4),
                 round(descuento_pct * 100, 2),
                 descuento_valor,
                 pvd,
@@ -228,36 +289,59 @@ class ControladorListaDistribuidores:
             ])
 
     def exportar_excel(self, ruta: str):
+        """
+        ✅ EXPORT SOLO PARA DISTRIBUIDORES:
+        SKU | NOMBRE | VARIACIÓN | STOCK | PVP | PVD | OBSERVACIÓN | URL
+        (en 2 hojas: Simples / Variados)
+        """
         wb = xlsxwriter.Workbook(ruta)
 
         header = wb.add_format({
             "bold": True, "align": "center", "valign": "vcenter",
             "border": 1, "bg_color": "#D9E1F2",
         })
-        cell = wb.add_format({"border": 1})
+        cell = wb.add_format({"border": 1, "align": "center", "valign": "vcenter"})
+        money = wb.add_format({"border": 1, "num_format": "#,##0.00", "align": "center", "valign": "vcenter"})
         url_fmt = wb.add_format({"border": 1, "font_color": "blue", "underline": 1})
 
-        widths = [14, 40, 22, 10, 10, 14, 12, 14, 14, 10, 28, 60]
+        # anchos export (8 cols)
+        widths = [14, 40, 28, 10, 10, 10, 28, 60]
 
         for nombre, datos in (("Productos Simples", self.simples), ("Productos Variados", self.variados)):
             ws = wb.add_worksheet(nombre[:31])
 
-            for col, h in enumerate(HEADERS_INTERNAL):
+            # headers export
+            for col, h in enumerate(HEADERS_EXPORT):
                 ws.write(0, col, h, header)
                 ws.set_column(col, col, widths[col] if col < len(widths) else 18)
 
+            # filas export
             for row_i, fila in enumerate(datos, start=1):
-                for col, val in enumerate(fila):
-                    if col == COL_URL:
-                        link = _safe_str(val)
+                for out_col, internal_col in enumerate(EXPORT_COLS_MAP):
+                    val = fila[internal_col] if internal_col < len(fila) else ""
+
+                    # URL
+                    if internal_col == COL_URL:
+                        link = _safe_str(val).strip()
                         if link:
-                            ws.write_url(row_i, col, link, url_fmt, string=link)
+                            ws.write_url(row_i, out_col, link, url_fmt, string=link)
                         else:
-                            ws.write(row_i, col, "", cell)
-                    else:
-                        ws.write(row_i, col, val, cell)
+                            ws.write(row_i, out_col, "", cell)
+                        continue
+
+                    # precios (PVP, PVD) -> formato moneda
+                    if internal_col in (COL_PVP, COL_PVD):
+                        ws.write_number(row_i, out_col, float(_to_float(val)), money)
+                        continue
+
+                    # stock -> número entero
+                    if internal_col == COL_STOCK:
+                        ws.write_number(row_i, out_col, int(_to_int(val)), cell)
+                        continue
+
+                    ws.write(row_i, out_col, val, cell)
 
             ws.freeze_panes(1, 0)
-            ws.autofilter(0, 0, max(1, len(datos)), len(HEADERS_INTERNAL) - 1)
+            ws.autofilter(0, 0, max(1, len(datos)), len(HEADERS_EXPORT) - 1)
 
         wb.close()
