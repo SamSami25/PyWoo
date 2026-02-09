@@ -2,19 +2,32 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from PySide6.QtCore import QAbstractTableModel, Qt
 from PySide6.QtGui import QFont
 import xlsxwriter
 
 from app.core.cliente_woocommerce import ClienteWooCommerce
+from app.core.column_utils import prune_empty_columns
 
 HEADERS = ["SKU", "NOMBRE", "CATEGORÍA", "STOCK", "PRECIO", "ESTADO"]
 COLUMN_KEYS = ["sku", "nombre", "categoria", "stock", "precio", "estado"]
 
 
 def _safe_str(x) -> str:
-    return "" if x is None else str(x)
+    if x is None:
+        return "N/A"
+    s = str(x)
+    return s if s.strip() else "N/A"
+
+
+def _to_float(x: Any) -> float:
+    """Float seguro (para export) usando Decimal para evitar errores."""
+    d = _to_dec(x).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if d < 0:
+        d = Decimal("0")
+    return float(d)
 
 
 def _to_int(x: Any) -> int:
@@ -26,17 +39,21 @@ def _to_int(x: Any) -> int:
         return 0
 
 
-def _to_float(x: Any) -> float:
+def _to_dec(x: Any) -> Decimal:
+    if x is None or x == "":
+        return Decimal("0")
+    s = str(x).strip().replace(",", ".")
     try:
-        if x is None or x == "":
-            return 0.0
-        return float(str(x).strip().replace(",", "."))
-    except Exception:
-        return 0.0
+        return Decimal(s)
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
 
 
 def _fmt_precio(x) -> str:
-    return f"{_to_float(x):.2f}"
+    d = _to_dec(x).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if d < 0:
+        d = Decimal("0")
+    return f"{d}"
 
 
 def _join_categorias(p: dict) -> str:
@@ -106,23 +123,25 @@ class ModeloTablaInventario(QAbstractTableModel):
         - si manage_stock=True  => según stock_quantity y filtro
     """
 
-    def __init__(self, datos: list[dict], filtro: str):
+    def __init__(self, datos: list[dict], filtro: str, headers: list[str], keys: list[str]):
         super().__init__()
         self._datos = datos
         self._filtro = filtro
+        self._headers = headers
+        self._keys = keys
 
     def rowCount(self, parent=None):
         return len(self._datos)
 
     def columnCount(self, parent=None):
-        return len(COLUMN_KEYS)
+        return len(self._keys)
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
 
         fila = self._datos[index.row()]
-        clave = COLUMN_KEYS[index.column()]
+        clave = self._keys[index.column()]
         val = fila.get(clave, "")
 
         if role == Qt.DisplayRole:
@@ -148,7 +167,7 @@ class ModeloTablaInventario(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return HEADERS[section]
+                return self._headers[section]
             if role == Qt.FontRole:
                 f = QFont()
                 f.setBold(True)
@@ -164,6 +183,8 @@ class ControladorInventario:
         self._simples: list[dict] = []
         self._variados: list[dict] = []
         self._ultimo_filtro: str = "todos"
+        self._headers = list(HEADERS)
+        self._keys = list(COLUMN_KEYS)
 
     @property
     def simples(self):
@@ -222,15 +243,17 @@ class ControladorInventario:
                     if not _pasa_filtro(filtro, stock, manage, st_status):
                         continue
 
-                    precio = v.get("price") or v.get("regular_price") or ""
+                    precio = v.get("price") or v.get("regular_price") or "0"
 
                     fila = {
-                        "sku": (v.get("sku") or "").strip(),
-                        "nombre": self._nombre_variacion(p, v),
-                        "categoria": categorias,
+                        "sku": ((v.get("sku") or "").strip() or "(SIN SKU)"),
+                        "nombre": (self._nombre_variacion(p, v) or "(SIN NOMBRE)"),
+                        # Si NUNCA viene categoría en tu tienda, se oculta la columna.
+                        "categoria": (categorias or None),
                         "stock": stock,
-                        "precio": precio,
-                        "estado": p.get("status", "") or "",
+                        "precio": _fmt_precio(precio),
+                        # Si NUNCA viene estado, se oculta la columna.
+                        "estado": ((p.get("status", "") or "").strip() or None),
                         # internos para estado/filtro correctos
                         "__manage_stock__": manage,
                         "__stock_status__": st_status,
@@ -247,12 +270,12 @@ class ControladorInventario:
                     continue
 
                 fila = {
-                    "sku": (p.get("sku") or "").strip(),
-                    "nombre": p.get("name", "") or "",
-                    "categoria": categorias,
+                    "sku": ((p.get("sku") or "").strip() or "(SIN SKU)"),
+                    "nombre": ((p.get("name", "") or "").strip() or "(SIN NOMBRE)"),
+                    "categoria": (categorias or None),
                     "stock": stock,
-                    "precio": p.get("price", "") or "",
-                    "estado": p.get("status", "") or "",
+                    "precio": _fmt_precio(p.get("price", "0") or "0"),
+                    "estado": ((p.get("status", "") or "").strip() or None),
                     "__manage_stock__": manage,
                     "__stock_status__": st_status,
                     "__tipo__": "simple",
@@ -262,15 +285,20 @@ class ControladorInventario:
             if callback_progreso:
                 callback_progreso(int((i / total) * 100), f"Procesando producto {i} de {total}")
 
+        # Quitar columnas opcionales que estén totalmente vacías / inexistentes
+        optional = {"categoria", "estado"}
+        combinadas = list(self._simples) + list(self._variados)
+        self._headers, self._keys = prune_empty_columns(combinadas, HEADERS, COLUMN_KEYS, optional)
+
         return (
-            ModeloTablaInventario(self._simples, filtro),
-            ModeloTablaInventario(self._variados, filtro),
+            ModeloTablaInventario(self._simples, filtro, self._headers, self._keys),
+            ModeloTablaInventario(self._variados, filtro, self._headers, self._keys),
         )
 
     # -----------------------------
     # EXPORTAR
     # -----------------------------
-    def exportar_excel(self, ruta: str, filtro: Optional[str] = None):
+    def exportar_excel(self, ruta: str, filtro: Optional[str] = None, simples=None, variados=None):
         if filtro is None:
             filtro = self._ultimo_filtro
 
@@ -285,13 +313,16 @@ class ControladorInventario:
 
         col_widths = {"sku": 14, "nombre": 44, "categoria": 28, "stock": 10, "precio": 12, "estado": 30}
 
-        for nombre, datos in (("Productos Simples", self._simples), ("Productos Variados", self._variados)):
+        datos_simples = simples if simples is not None else self._simples
+        datos_variados = variados if variados is not None else self._variados
+
+        for nombre, datos in (("Productos Simples", datos_simples), ("Productos Variados", datos_variados)):
             ws = workbook.add_worksheet(nombre[:31])
 
-            for col, h in enumerate(HEADERS):
+            for col, h in enumerate(self._headers):
                 ws.write(0, col, h, header_fmt)
 
-            for col, key in enumerate(COLUMN_KEYS):
+            for col, key in enumerate(self._keys):
                 ws.set_column(col, col, col_widths.get(key, 18))
 
             last_row = 0
@@ -302,7 +333,7 @@ class ControladorInventario:
                 manage = bool(fila.get("__manage_stock__", False))
                 st_status = _safe_str(fila.get("__stock_status__", "")).lower().strip()
 
-                for col, key in enumerate(COLUMN_KEYS):
+                for col, key in enumerate(self._keys):
                     val = fila.get(key, "")
 
                     if key == "stock":
@@ -314,7 +345,7 @@ class ControladorInventario:
                     else:
                         ws.write(row, col, _safe_str(val), text_fmt)
 
-            ws.autofilter(0, 0, max(1, last_row), len(HEADERS) - 1)
+            ws.autofilter(0, 0, max(1, last_row), max(0, len(self._headers) - 1))
             ws.freeze_panes(1, 0)
 
         workbook.close()

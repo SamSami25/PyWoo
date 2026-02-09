@@ -203,7 +203,34 @@ class ModeloActualizarProductos(QAbstractTableModel):
         fila = r.como_fila()
         valor = fila[index.column()]
 
-        if role in (Qt.DisplayRole, Qt.EditRole):
+        if role == Qt.EditRole:
+            return valor
+
+        if role == Qt.DisplayRole:
+            # Evitar celdas vacías en columnas no editables
+            if valor is None:
+                return "N/A"
+            if isinstance(valor, str) and not valor.strip():
+                # En columnas editables permitimos vacío
+                if index.column() in (COL_STOCK_NUEVO, COL_PRECIO_VENTA_NUEVO):
+                    return ""
+                return "N/A"
+            # Clamp visual de negativos
+            if index.column() in (COL_STOCK_ACTUAL, COL_STOCK_NUEVO):
+                try:
+                    v = int(float(str(valor).replace(',', '.')))
+                    return str(max(v, 0))
+                except Exception:
+                    return valor
+            if index.column() in (COL_PRECIO_ACTUAL, COL_PRECIO_COMPRA, COL_PRECIO_VENTA_ACTUAL, COL_PRECIO_VENTA_NUEVO):
+                try:
+                    from decimal import Decimal, ROUND_HALF_UP
+                    d = Decimal(str(valor).replace(',', '.')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                    if d < 0:
+                        d = Decimal('0.00')
+                    return str(d)
+                except Exception:
+                    return valor
             return valor
 
         if role == Qt.TextAlignmentRole:
@@ -238,8 +265,13 @@ class ModeloActualizarProductos(QAbstractTableModel):
                     return False
 
             elif index.column() == COL_PRECIO_VENTA_NUEVO:
+                # ✅ cuantiza a 2 decimales para evitar diferencias de centavos
                 txt = str(value).strip().replace(",", ".")
-                r.precio_venta_nuevo = None if txt == "" else float(txt)
+                if txt == "":
+                    r.precio_venta_nuevo = None
+                else:
+                    d = _to_decimal(txt).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    r.precio_venta_nuevo = float(d)
                 if r.precio_venta_nuevo is not None and r.precio_venta_nuevo < 0:
                     return False
             else:
@@ -525,7 +557,7 @@ class ControladorActualizarProductos:
                 callback(int((i / total) * 100), f"Aplicando cambios {i} de {total}")
 
     # -------- EXPORTAR --------
-    def exportar_excel(self, ruta: str):
+    def exportar_excel(self, ruta: str, simples=None, variados=None):
         """
         Exporta en DOS pestañas (como reporte):
         - Productos Simples

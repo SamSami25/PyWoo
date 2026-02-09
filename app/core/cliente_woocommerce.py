@@ -38,6 +38,48 @@ class ClienteWooCommerce:
         self.base_url = f"{url}/wp-json/wc/v3"
         self.auth = (ck, cs)
 
+        # ✅ Cachés para reducir llamadas repetidas (mejora fuerte en módulos grandes)
+        self._cache_productos: dict[int, dict] = {}
+        self._cache_variaciones: dict[tuple[int, int], dict] = {}
+
+    # -----------------------------
+    # Helpers de caché
+    # -----------------------------
+    def obtener_producto(self, producto_id: int) -> dict:
+        """Obtiene un producto por ID con caché en memoria."""
+        if producto_id in self._cache_productos:
+            return self._cache_productos[producto_id]
+        try:
+            r = requests.get(
+                f"{self.base_url}/products/{producto_id}",
+                auth=self.auth,
+                timeout=30,
+            )
+            r.raise_for_status()
+            data = r.json()
+            self._cache_productos[producto_id] = data
+            return data
+        except Exception as e:
+            raise WooCommerceConexionError(str(e))
+
+    def obtener_variacion(self, producto_id: int, variacion_id: int) -> dict:
+        """Obtiene una variación por ID con caché en memoria."""
+        key = (producto_id, variacion_id)
+        if key in self._cache_variaciones:
+            return self._cache_variaciones[key]
+        try:
+            r = requests.get(
+                f"{self.base_url}/products/{producto_id}/variations/{variacion_id}",
+                auth=self.auth,
+                timeout=30,
+            )
+            r.raise_for_status()
+            data = r.json()
+            self._cache_variaciones[key] = data
+            return data
+        except Exception as e:
+            raise WooCommerceConexionError(str(e))
+
     def probar_conexion(self):
         try:
             r = requests.get(
@@ -215,13 +257,8 @@ class ClienteWooCommerce:
 
     def obtener_sku_producto(self, producto_id: int) -> str:
         try:
-            r = requests.get(
-                f"{self.base_url}/products/{producto_id}",
-                auth=self.auth,
-                timeout=30,
-            )
-            r.raise_for_status()
-            return (r.json().get("sku") or "").strip()
+            p = self.obtener_producto(producto_id)
+            return (p.get("sku") or "").strip()
         except Exception:
             return ""
 

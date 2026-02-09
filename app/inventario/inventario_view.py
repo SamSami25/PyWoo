@@ -1,8 +1,8 @@
 # app/inventario/inventario_view.py
 from __future__ import annotations
 
-from PySide6.QtCore import QThread, QDate
-from PySide6.QtWidgets import QFileDialog, QHeaderView
+from PySide6.QtCore import QThread, QDate, Qt
+from PySide6.QtWidgets import QFileDialog, QHeaderView, QHBoxLayout, QLabel, QLineEdit, QPushButton
 from shiboken6 import isValid
 
 from app.inventario.ui.ui_view_inventario import Ui_Inventario
@@ -12,6 +12,8 @@ from app.inventario.worker_inventario import WorkerInventario
 from app.core.base_windows import BaseModuleWindow
 from app.core.proceso import ProcessDialog
 from app.core.dialogos import mostrar_error, mostrar_info
+from app.core.table_enhancer import TableEnhancer
+from app.core.disabled_click_filter import DisabledClickFilter
 
 
 class InventarioView(BaseModuleWindow):
@@ -20,6 +22,17 @@ class InventarioView(BaseModuleWindow):
 
         self.ui = Ui_Inventario()
         self.ui.setupUi(self)
+
+        # Estado del botón Exportar (para explicar por qué está bloqueado)
+        self._export_reason: str = ""
+        self._export_filter = DisabledClickFilter(self, lambda: self._export_reason, title="Exportar deshabilitado")
+        self.ui.btnExportar.installEventFilter(self._export_filter)
+
+        # ✅ Por defecto arrancar en "Productos simples" (tab 0)
+        try:
+            self.ui.tabWidget.setCurrentIndex(0)
+        except Exception:
+            pass
 
         self.controlador = ControladorInventario()
 
@@ -30,7 +43,12 @@ class InventarioView(BaseModuleWindow):
         self._generado = False
         self._ocupado = False
 
+        # --- Sorting + Buscador (SKU/NOMBRE) ---
+        # IMPORTANTE: se crea antes de activar checkTodos (que limpia tablas).
+        self._enhancer = TableEnhancer((self.ui.tableSimples, self.ui.tableVariados), search_columns=(0, 1))
+
         self._configurar_tablas()
+        self._crear_buscador()
         self._configurar_checks()
         self._configurar_estado()
         self._conectar()
@@ -44,6 +62,25 @@ class InventarioView(BaseModuleWindow):
             header.setSectionResizeMode(QHeaderView.ResizeToContents)
             header.setStretchLastSection(True)
 
+    def _crear_buscador(self):
+        layout = self.ui.layoutMain
+        fila = QHBoxLayout()
+
+        lbl = QLabel("Buscar:")
+        self._txt_buscar = QLineEdit()
+        self._txt_buscar.setPlaceholderText("Buscar por SKU o nombre…")
+        fila.addWidget(lbl)
+        fila.addWidget(self._txt_buscar, 1)
+        # Inserta después del bloque de progreso (antes de tabs)
+        layout.insertLayout(3, fila)
+
+        self._txt_buscar.textChanged.connect(self._on_buscar)
+    def _tabla_activa(self):
+        return self.ui.tableSimples if self.ui.tabWidget.currentIndex() == 0 else self.ui.tableVariados
+
+    def _on_buscar(self, txt: str):
+        self._enhancer.apply_search(self._tabla_activa(), txt)
+
     def _configurar_checks(self):
         self.ui.checkTodos.toggled.connect(self._on_check_todos)
         self.ui.checkSinStock.toggled.connect(self._on_check_sin_stock)
@@ -51,10 +88,15 @@ class InventarioView(BaseModuleWindow):
         self.ui.checkTodos.setChecked(True)
 
     def _configurar_estado(self):
-        self.ui.btnExportar.setEnabled(False)
+        self._set_export_enabled(False, "Genera el inventario para habilitar Exportar.")
         self.ui.labelEstado.setText("")
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
+
+    def _set_export_enabled(self, enabled: bool, reason: str = "") -> None:
+        self.ui.btnExportar.setEnabled(enabled)
+        self._export_reason = "" if enabled else (reason or "Exportar no está disponible.")
+        self.ui.btnExportar.setToolTip("" if enabled else self._export_reason)
 
     def _conectar(self):
         self.ui.btnGenerar.clicked.connect(self._generar)
@@ -127,6 +169,7 @@ class InventarioView(BaseModuleWindow):
 
         self._detener_hilo()
         self._limpiar_tablas()
+        self._set_export_enabled(False, "Generando inventario...")
         self._ocupado = True
 
         filtro = self._obtener_filtro()
@@ -166,11 +209,20 @@ class InventarioView(BaseModuleWindow):
             self.dialogo.close()
             self.dialogo = None
 
-        self.ui.tableSimples.setModel(modelo_simples)
-        self.ui.tableVariados.setModel(modelo_variados)
+        # ✅ sorting + filtrado (proxy) para ambos tabs
+        self._enhancer.set_models((modelo_simples, modelo_variados))
 
         self.ui.labelEstado.setText("Inventario generado correctamente")
-        self.ui.btnExportar.setEnabled(True)
+        filas_visibles = 0
+        try:
+            filas_visibles = int(self._tabla_activa().model().rowCount())
+        except Exception:
+            filas_visibles = 0
+
+        if filas_visibles > 0:
+            self._set_export_enabled(True)
+        else:
+            self._set_export_enabled(False, "No hay datos para exportar con el filtro actual.")
         self._ocupado = False
         self._generado = True
 
@@ -186,6 +238,20 @@ class InventarioView(BaseModuleWindow):
     # --------------------------------------------------
     # Exportar
     # --------------------------------------------------
+    def _filas_ordenadas(self, tabla):
+        """Filas en el orden visible (proxy: filtro + sort)."""
+        modelo = tabla.model()
+        if modelo is None:
+            return []
+        filas = []
+        for r in range(modelo.rowCount()):
+            fila = []
+            for c in range(modelo.columnCount()):
+                fila.append(modelo.index(r, c).data(Qt.DisplayRole))
+            filas.append(fila)
+        return filas
+
+
     def _exportar(self):
         if not self._generado:
             mostrar_error("Debe generar el inventario primero.", self)
@@ -210,7 +276,7 @@ class InventarioView(BaseModuleWindow):
 
         if ruta:
             try:
-                self.controlador.exportar_excel(ruta, filtro=filtro)
+                self.controlador.exportar_excel(ruta, filtro=filtro, simples=self._filas_ordenadas(self.ui.tableSimples), variados=self._filas_ordenadas(self.ui.tableVariados))
                 mostrar_info("Archivo exportado correctamente.", self)
             except Exception as e:
                 mostrar_error(str(e), self)
@@ -226,10 +292,14 @@ class InventarioView(BaseModuleWindow):
         return "todos"
 
     def _limpiar_tablas(self):
-        self.ui.tableSimples.setModel(None)
-        self.ui.tableVariados.setModel(None)
+        # En __init__ se dispara checkTodos.setChecked(True) antes de crear el enhancer.
+        # Por eso protegemos la llamada.
+        if hasattr(self, "_enhancer"):
+            self._enhancer.clear()
+        if getattr(self, "_txt_buscar", None):
+            self._txt_buscar.setText("")
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
         self.ui.labelEstado.setText("")
-        self.ui.btnExportar.setEnabled(False)
+        self._set_export_enabled(False, "Genera el inventario para habilitar Exportar.")
         self._generado = False

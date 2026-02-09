@@ -9,6 +9,7 @@ from PySide6.QtGui import QFont
 import xlsxwriter
 
 from app.core.cliente_woocommerce import ClienteWooCommerce
+from app.core.column_utils import prune_empty_columns
 
 
 HEADERS = [
@@ -25,7 +26,15 @@ COLUMN_KEYS = [
 
 
 def _safe_str(x) -> str:
-    return "" if x is None else str(x)
+    # Evita celdas vacías (requisito: no vacíos)
+    if x is None:
+        return "N/A"
+    s = str(x)
+    return s if s.strip() else "N/A"
+
+
+def _clamp_nonneg_dec(x: Decimal) -> Decimal:
+    return x if x >= 0 else Decimal("0")
 
 
 def _to_decimal(x: Any) -> Decimal:
@@ -63,22 +72,24 @@ def _estado_es(status: str) -> str:
 
 
 class ModeloTablaReporteVentas(QAbstractTableModel):
-    def __init__(self, datos: list[dict]):
+    def __init__(self, datos: list[dict], headers: list[str], keys: list[str]):
         super().__init__()
         self._datos = datos
+        self._headers = headers
+        self._keys = keys
 
     def rowCount(self, parent=None):
         return len(self._datos)
 
     def columnCount(self, parent=None):
-        return len(COLUMN_KEYS)
+        return len(self._keys)
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
 
         fila = self._datos[index.row()]
-        clave = COLUMN_KEYS[index.column()]
+        clave = self._keys[index.column()]
 
         if role == Qt.DisplayRole:
             return _safe_str(fila.get(clave, ""))
@@ -93,8 +104,8 @@ class ModeloTablaReporteVentas(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                if 0 <= section < len(HEADERS):
-                    return HEADERS[section]
+                if 0 <= section < len(self._headers):
+                    return self._headers[section]
             if role == Qt.FontRole:
                 f = QFont()
                 f.setBold(True)
@@ -108,6 +119,44 @@ class ControladorReporteVentas:
     def __init__(self):
         self.cliente = ClienteWooCommerce()
         self._pedidos: list[dict] = []
+        self._headers = list(HEADERS)
+        self._keys = list(COLUMN_KEYS)
+
+    def _extraer_identificacion(self, o: dict) -> str | None:
+        """Intenta encontrar identificación (cédula/RUC/DNI/VAT) desde billing/meta_data."""
+        billing = o.get("billing") or {}
+        # 1) billing directo (por si existe campo custom)
+        for k in ("identificacion", "identificación", "cedula", "cédula", "dni", "ruc", "vat", "nif", "tax_id"):
+            v = billing.get(k)
+            if v and str(v).strip():
+                return str(v).strip()
+
+        # 2) meta_data (Woo devuelve lista de dicts con 'key' y 'value')
+        for md in (o.get("meta_data") or []):
+            key = str(md.get("key") or "").strip().lower()
+            if not key:
+                continue
+            if any(t in key for t in ("ident", "ced", "dni", "ruc", "vat", "nif", "tax")):
+                v = md.get("value")
+                if v is None:
+                    continue
+                s = str(v).strip()
+                if s:
+                    return s
+        return None
+
+    def _extraer_cajero(self, o: dict) -> str | None:
+        # Normalmente viene por meta de POS, plugin o método de pago
+        for md in (o.get("meta_data") or []):
+            key = str(md.get("key") or "").strip().lower()
+            if any(t in key for t in ("cashier", "cajero", "pos", "seller", "vendedor")):
+                v = md.get("value")
+                if v is None:
+                    continue
+                s = str(v).strip()
+                if s:
+                    return s
+        return None
 
     # ---------------- GENERAR ----------------
     def generar_reporte(
@@ -142,34 +191,48 @@ class ControladorReporteVentas:
             correo = (billing.get("email") or "").strip()
             telefono = (billing.get("phone") or "").strip()
 
+            direccion = " ".join(
+                [
+                    (shipping.get("address_1") or billing.get("address_1") or "").strip(),
+                    (shipping.get("address_2") or billing.get("address_2") or "").strip(),
+                ]
+            ).strip()
+            direccion = direccion or None
+
+            identificacion = self._extraer_identificacion(o)
+            cajero = self._extraer_cajero(o)
+
             # Valores (tu lógica actual)
-            subtotal = _to_decimal("0")
+            subtotal = Decimal("0")
             for li in (o.get("line_items") or []):
                 subtotal += _to_decimal(li.get("subtotal"))
 
-            envio = _to_decimal(o.get("shipping_total"))
-            iva = _to_decimal(o.get("total_tax"))
-            descuento = _to_decimal(o.get("discount_total"))
-            total_orden = _to_decimal(o.get("total"))
+            # ✅ Evita negativos en cálculos
+            subtotal = _clamp_nonneg_dec(subtotal)
+            envio = _clamp_nonneg_dec(_to_decimal(o.get("shipping_total")))
+            iva = _clamp_nonneg_dec(_to_decimal(o.get("total_tax")))
+            descuento = _clamp_nonneg_dec(_to_decimal(o.get("discount_total")))
+            total_orden = _clamp_nonneg_dec(_to_decimal(o.get("total")))
 
             fila = {
-                "fecha": fecha,
-                "cliente": cliente,
+                "fecha": fecha or "N/A",
+                "cliente": cliente or "N/A",
                 "subtotal": _money_dec(subtotal),
                 "envio": _money_dec(envio),
                 "iva": _money_dec(iva),
                 "descuento": _money_dec(descuento),
                 "total": _money_dec(total_orden),
                 "utilidad": _money_dec(Decimal("0")),
-                "estado": estado,
-                "notas": (o.get("customer_note") or "").strip(),
-                "pedido": pedido_id,
-                "identificacion": "",
-                "correo": correo,
-                "telefono": telefono,
-                "direccion": "",
-                "ciudad": (shipping.get("city") or billing.get("city") or "").strip(),
-                "cajero": "",
+                "estado": estado or "N/A",
+                # NOTA: si ninguna orden tiene notas, ocultamos la columna completa.
+                "notas": (o.get("customer_note") or "").strip() or None,
+                "pedido": pedido_id or "N/A",
+                "identificacion": identificacion,
+                "correo": correo or None,
+                "telefono": telefono or None,
+                "direccion": direccion,
+                "ciudad": (shipping.get("city") or billing.get("city") or "").strip() or None,
+                "cajero": cajero,
             }
 
             self._pedidos.append(fila)
@@ -180,12 +243,24 @@ class ControladorReporteVentas:
                     f"Procesando pedido {i} de {total}"
                 )
 
-        modelo_principal = ModeloTablaReporteVentas(self._pedidos)
-        modelo_vacio = ModeloTablaReporteVentas([])
+        # Quitar columnas opcionales que estén totalmente vacías / inexistentes
+        optional = {
+            "identificacion",
+            "correo",
+            "telefono",
+            "direccion",
+            "ciudad",
+            "cajero",
+            "notas",
+        }
+        self._headers, self._keys = prune_empty_columns(self._pedidos, HEADERS, COLUMN_KEYS, optional)
+
+        modelo_principal = ModeloTablaReporteVentas(self._pedidos, self._headers, self._keys)
+        modelo_vacio = ModeloTablaReporteVentas([], self._headers, self._keys)
         return modelo_principal, modelo_vacio
 
     # ---------------- EXPORTAR ----------------
-    def exportar_excel(self, ruta: str):
+    def exportar_excel(self, ruta: str, filas=None):
         workbook = xlsxwriter.Workbook(ruta)
 
         header_fmt = workbook.add_format({
@@ -200,11 +275,13 @@ class ControladorReporteVentas:
 
         ws = workbook.add_worksheet("Pedidos")
 
-        for col, h in enumerate(HEADERS):
+        for col, h in enumerate(self._headers):
             ws.write(0, col, h, header_fmt)
 
-        for r, fila in enumerate(self._pedidos, start=1):
-            for c, key in enumerate(COLUMN_KEYS):
+        datos = filas if filas is not None else self._pedidos
+
+        for r, fila in enumerate(datos, start=1):
+            for c, key in enumerate(self._keys):
                 val = fila.get(key, "")
                 if key in ("subtotal", "envio", "iva", "descuento", "total", "utilidad"):
                     ws.write_number(r, c, _safe_float(val), money_fmt)
@@ -212,6 +289,6 @@ class ControladorReporteVentas:
                     ws.write(r, c, val, text_fmt)
 
         ws.freeze_panes(1, 0)
-        ws.autofilter(0, 0, max(1, len(self._pedidos)), len(HEADERS) - 1)
+        ws.autofilter(0, 0, max(1, len(datos)), max(0, len(self._headers) - 1))
 
         workbook.close()

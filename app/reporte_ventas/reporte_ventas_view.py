@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from PySide6.QtCore import QThread, QDate
-from PySide6.QtWidgets import QFileDialog, QHeaderView
+from PySide6.QtCore import QThread, QDate, Qt
+from PySide6.QtWidgets import QFileDialog, QHeaderView, QHBoxLayout, QLabel, QLineEdit, QPushButton
 from shiboken6 import isValid
 
 from app.core.base_windows import BaseModuleWindow
@@ -14,6 +14,9 @@ from app.reporte_ventas.worker_reporte_ventas import WorkerReporteVentas
 
 from app.core.proceso import ProcessDialog
 from app.core.dialogos import mostrar_error, mostrar_info
+from app.core.table_enhancer import TableEnhancer
+from app.core.disabled_click_filter import DisabledClickFilter
+from app.core.disabled_click_filter import DisabledClickFilter
 
 
 def _fmt_ddmmyyyy(d: date) -> str:
@@ -27,6 +30,11 @@ class ReporteVentasView(BaseModuleWindow):
         self.ui = Ui_ReporteVentas()
         self.ui.setupUi(self)
 
+        # Estado del botón Exportar (para explicar por qué está bloqueado)
+        self._export_reason: str = ""
+        self._export_filter = DisabledClickFilter(self, lambda: self._export_reason, title="Exportar deshabilitado")
+        self.ui.btnExportar.installEventFilter(self._export_filter)
+
         self.controlador = ControladorReporteVentas()
         self._generado = False
 
@@ -39,13 +47,31 @@ class ReporteVentasView(BaseModuleWindow):
         self._configurar()
         self._conectar()
 
+        # --- Sorting + Buscador (Cliente/Pedido) ---
+        self._enhancer = TableEnhancer((self.ui.tableSimples,), search_columns=(1, 10))
+        self._crear_buscador()
+
+    def _crear_buscador(self):
+        """Agrega un buscador al layout (sin tocar el .ui generado)."""
+        layout = self.ui.layoutMain
+        fila = QHBoxLayout()
+
+        lbl = QLabel("Buscar:")
+        self._txt_buscar = QLineEdit()
+        self._txt_buscar.setPlaceholderText("Buscar por cliente o pedido…")
+        fila.addWidget(lbl)
+        fila.addWidget(self._txt_buscar, 1)
+        # Inserta después de la barra de progreso (antes de la tabla)
+        layout.insertLayout(3, fila)
+
+        self._txt_buscar.textChanged.connect(lambda t: self._enhancer.apply_search(self.ui.tableSimples, t))
     # --------------------------------------------------
     # UI
     # --------------------------------------------------
     def _configurar(self):
-        hoy = QDate.currentDate()
-        self.ui.dateDesde.setDate(hoy.addYears(-1))
-        self.ui.dateHasta.setDate(hoy)
+        # Por defecto: Desde 01/01/2026 y Hasta el día actual.
+        self.ui.dateDesde.setDate(QDate(2026, 1, 1))
+        self.ui.dateHasta.setDate(QDate.currentDate())
 
         header = self.ui.tableSimples.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -66,7 +92,7 @@ class ReporteVentasView(BaseModuleWindow):
             except Exception:
                 pass
 
-        self.ui.btnExportar.setEnabled(False)
+        self._set_export_enabled(False, "Genera el reporte para habilitar Exportar.")
         self.ui.labelEstado.setText("")
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
@@ -78,6 +104,12 @@ class ReporteVentasView(BaseModuleWindow):
         self.ui.btnGenerar.clicked.connect(self._generar)
         self.ui.btnExportar.clicked.connect(self._exportar)
         self.ui.btnVolver.clicked.connect(self._volver_menu)
+
+    def _set_export_enabled(self, enabled: bool, reason: str = "") -> None:
+        self.ui.btnExportar.setEnabled(enabled)
+        self._export_reason = "" if enabled else (reason or "Exportar no está disponible.")
+        # Tooltip útil incluso si el usuario no hace click
+        self.ui.btnExportar.setToolTip("" if enabled else self._export_reason)
 
     # --------------------------------------------------
     # Validaciones
@@ -162,7 +194,9 @@ class ReporteVentasView(BaseModuleWindow):
 
         self._generado = False
         self.ui.btnExportar.setEnabled(False)
-        self.ui.tableSimples.setModel(None)
+        self._enhancer.clear()
+        if getattr(self, "_txt_buscar", None):
+            self._txt_buscar.setText("")
         self.ui.labelEstado.setText("")
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
@@ -222,7 +256,8 @@ class ReporteVentasView(BaseModuleWindow):
             self._generado = False
             return
 
-        self.ui.tableSimples.setModel(modelo_pedidos)
+        # ✅ sorting + filtrado (proxy)
+        self._enhancer.set_models((modelo_pedidos,))
 
         self.ui.labelEstado.setText("Reporte generado correctamente")
         self.ui.btnExportar.setEnabled(True)
@@ -270,7 +305,7 @@ class ReporteVentasView(BaseModuleWindow):
 
         if ruta:
             try:
-                self.controlador.exportar_excel(ruta)
+                self.controlador.exportar_excel(ruta, filas=self._filas_ordenadas())
                 mostrar_info("Archivo exportado correctamente.", self)
             except Exception as e:
                 mostrar_error(str(e), self)

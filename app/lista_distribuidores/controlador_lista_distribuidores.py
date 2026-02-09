@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, List, Tuple
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QFont, QBrush, QColor
@@ -68,16 +69,22 @@ EXPORT_COLS_MAP = [
 ]
 
 
-def _to_float(x: Any) -> float:
+def _to_dec(x: Any) -> Decimal:
+    """Convierte a Decimal (redondeo financiero al final)."""
+    if x is None:
+        return Decimal("0")
+    s = str(x).strip()
+    if not s:
+        return Decimal("0")
+    s = s.replace(",", ".")
     try:
-        if x is None:
-            return 0.0
-        s = str(x).strip().replace(",", ".")
-        if s == "":
-            return 0.0
-        return float(s)
-    except Exception:
-        return 0.0
+        return Decimal(s)
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
+
+
+def _q2(x: Decimal) -> Decimal:
+    return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _to_int(x: Any) -> int:
@@ -93,7 +100,15 @@ def _to_int(x: Any) -> int:
 
 
 def _safe_str(x: Any) -> str:
-    return "" if x is None else str(x)
+    # Evita celdas vacías en UI/export (requisito: no vacíos)
+    if x is None:
+        return "N/A"
+    s = str(x)
+    return s if s.strip() else "N/A"
+
+
+def _clamp_nonneg_dec(x: Decimal) -> Decimal:
+    return x if x >= 0 else Decimal("0")
 
 
 def _fmt_2_dec_trim(x: Any) -> str:
@@ -221,27 +236,47 @@ class ControladorListaDistribuidores:
         if stock <= 0:
             return
 
-        pvp = _to_float(p.get("price"))
-        p_compra = _to_float(p.get("purchase_price"))
+        # ✅ Evita diferencias de centavos (Decimal + redondeo financiero)
+        pvp_d = _clamp_nonneg_dec(_to_dec(p.get("price")))
+        p_compra_d = _clamp_nonneg_dec(_to_dec(p.get("purchase_price")))
 
-        ganancia = (1 - (p_compra / pvp)) if pvp > 0 else 0.0
-        descuento_pct = self._por_descuento(ganancia)
-        descuento_valor = round(descuento_pct * pvp, 2)
-        pvd = round(pvp - descuento_valor, 2)
+        ganancia_d = (Decimal("1") - (p_compra_d / pvp_d)) if pvp_d > 0 else Decimal("0")
+        margen_negativo = ganancia_d < 0
+        if margen_negativo:
+            ganancia_d = Decimal("0")
+        ganancia = float(ganancia_d.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
+
+        descuento_pct = max(self._por_descuento(ganancia), 0.0)
+        descuento_valor_d = _q2(_clamp_nonneg_dec(Decimal(str(descuento_pct)) * pvp_d))
+        # No permitir que el descuento sea mayor al PVP
+        if descuento_valor_d > pvp_d:
+            descuento_valor_d = _q2(pvp_d)
+        pvd_d = _q2(_clamp_nonneg_dec(pvp_d - descuento_valor_d))
+
+        obs = self._observacion(descuento_pct, stock)
+        if margen_negativo:
+            obs = (obs + " | " if obs else "") + "MARGEN NEGATIVO (REVISAR COSTO)"
+
+        # Guardamos None en campos opcionales para poder ocultar columnas si no existen en la tienda.
+        obs_val = obs.strip() if isinstance(obs, str) else obs
+        if not obs_val:
+            obs_val = None
+
+        url = (p.get("permalink") or "").strip() or None
 
         self.simples.append([
-            (p.get("sku") or "").strip(),
-            p.get("name", "") or "",
-            "",
+            ((p.get("sku") or "").strip() or "(SIN SKU)"),
+            ((p.get("name", "") or "").strip() or "(SIN NOMBRE)"),
+            None,  # VARIACIÓN (no aplica en simple)
             stock,
-            round(pvp, 2),
-            round(p_compra, 2),
-            round(ganancia, 4),  # interno puede quedarse con 4 para cálculos, pero se muestra 2 dec.
+            float(_q2(pvp_d)),
+            float(_q2(p_compra_d)),
+            ganancia,  # interno 4 decimales
             round(descuento_pct * 100, 2),
-            descuento_valor,
-            pvd,
-            self._observacion(descuento_pct, stock),
-            p.get("permalink", "") or "",
+            float(descuento_valor_d),
+            float(pvd_d),
+            obs_val,
+            url,
         ])
 
     def _procesar_variaciones(self, producto: dict):
@@ -259,13 +294,22 @@ class ControladorListaDistribuidores:
             if stock <= 0:
                 continue
 
-            pvp = _to_float(v.get("price") or v.get("regular_price"))
-            p_compra = _to_float(v.get("purchase_price"))
+            # ✅ Decimal para evitar diferencias de centavos
+            # ✅ Evita negativos
+            pvp_d = _clamp_nonneg_dec(_to_dec(v.get("price") or v.get("regular_price")))
+            p_compra_d = _clamp_nonneg_dec(_to_dec(v.get("purchase_price")))
 
-            ganancia = (1 - (p_compra / pvp)) if pvp > 0 else 0.0
-            descuento_pct = self._por_descuento(ganancia)
-            descuento_valor = round(descuento_pct * pvp, 2)
-            pvd = round(pvp - descuento_valor, 2)
+            ganancia_d = (Decimal("1") - (p_compra_d / pvp_d)) if pvp_d > 0 else Decimal("0")
+            margen_negativo = ganancia_d < 0
+            if margen_negativo:
+                ganancia_d = Decimal("0")
+            ganancia = float(ganancia_d.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP))
+
+            descuento_pct = max(self._por_descuento(ganancia), 0.0)
+            descuento_valor_d = _q2(_clamp_nonneg_dec(Decimal(str(descuento_pct)) * pvp_d))
+            if descuento_valor_d > pvp_d:
+                descuento_valor_d = _q2(pvp_d)
+            pvd_d = _q2(_clamp_nonneg_dec(pvp_d - descuento_valor_d))
 
             variacion = " | ".join(
                 f"{(a.get('name') or '').strip()}: {(a.get('option') or '').strip()}"
@@ -273,22 +317,33 @@ class ControladorListaDistribuidores:
                 if (a.get("name") or "").strip() and (a.get("option") or "").strip()
             ) or "Variación"
 
+            obs = self._observacion(descuento_pct, stock)
+            if margen_negativo:
+                obs = (obs + " | " if obs else "") + "MARGEN NEGATIVO (REVISAR COSTO)"
+
+            # Guardamos None en campos opcionales para poder ocultar columnas si no existen en la tienda.
+            obs_val = obs.strip() if isinstance(obs, str) else obs
+            if not obs_val:
+                obs_val = None
+
+            url = (producto.get("permalink") or "").strip() or None
+
             self.variados.append([
-                (v.get("sku") or "").strip(),
-                producto.get("name", "") or "",
+                ((v.get("sku") or "").strip() or "(SIN SKU)"),
+                ((producto.get("name", "") or "").strip() or "(SIN NOMBRE)"),
                 variacion,
                 stock,
-                round(pvp, 2),
-                round(p_compra, 2),
-                round(ganancia, 4),
+                float(_q2(pvp_d)),
+                float(_q2(p_compra_d)),
+                ganancia,
                 round(descuento_pct * 100, 2),
-                descuento_valor,
-                pvd,
-                self._observacion(descuento_pct, stock),
-                producto.get("permalink", "") or "",
+                float(descuento_valor_d),
+                float(pvd_d),
+                obs_val,
+                url,
             ])
 
-    def exportar_excel(self, ruta: str):
+    def exportar_excel(self, ruta: str, simples=None, variados=None):
         """
         ✅ EXPORT SOLO PARA DISTRIBUIDORES:
         SKU | NOMBRE | VARIACIÓN | STOCK | PVP | PVD | OBSERVACIÓN | URL
@@ -307,7 +362,10 @@ class ControladorListaDistribuidores:
         # anchos export (8 cols)
         widths = [14, 40, 28, 10, 10, 10, 28, 60]
 
-        for nombre, datos in (("Productos Simples", self.simples), ("Productos Variados", self.variados)):
+        datos_simples = simples if simples is not None else self.simples
+        datos_variados = variados if variados is not None else self.variados
+
+        for nombre, datos in (("Productos Simples", datos_simples), ("Productos Variados", datos_variados)):
             ws = wb.add_worksheet(nombre[:31])
 
             # headers export
@@ -331,7 +389,7 @@ class ControladorListaDistribuidores:
 
                     # precios (PVP, PVD) -> formato moneda
                     if internal_col in (COL_PVP, COL_PVD):
-                        ws.write_number(row_i, out_col, float(_to_float(val)), money)
+                        ws.write_number(row_i, out_col, float(_q2(_to_dec(val))), money)
                         continue
 
                     # stock -> número entero

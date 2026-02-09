@@ -1,147 +1,61 @@
-```markdown
-# PyWoo v1  
-Aplicación de Gestión WooCommerce con Interfaz Gráfica (GUI)
+# PyWoo
 
-PyWoo es una aplicación de escritorio desarrollada en Python con PySide6 que permite gestionar información clave de una tienda WooCommerce a través de una interfaz gráfica moderna, intuitiva y modular. La aplicación centraliza procesos administrativos como reportes de ventas, inventario, actualización de productos y generación de listas para distribuidores, reduciendo la dependencia de procesos manuales y del panel web de WooCommerce.
+PyWoo es una aplicación de escritorio (Python + PySide6) para gestionar una tienda WooCommerce mediante la API REST.
 
----
+## Características
+- Interfaz gráfica en **PySide6**.
+- Conexión directa a **WooCommerce REST API**.
+- Exportación a **Excel (.xlsx)**.
+- Barra de progreso y mensajes de estado durante procesos largos.
+- Arquitectura modular (controlador + vista + modelo de tabla).
 
-## Características Principales
+## UX en tablas (aplica a todos los módulos)
+- **Ordenamiento asc/desc**: clic en cualquier encabezado.
+- **Buscador**: filtra por SKU o nombre (o por Cliente/Pedido en Reporte de Ventas).
+- **Selección siempre azul**: la fila encontrada queda resaltada en azul aunque el foco esté en el buscador.
+- **Exportación como se ve**: se exporta respetando el **orden** (asc/desc) y el **filtro** activos en la tabla.
 
-- Interfaz gráfica moderna desarrollada con PySide6  
-- Conexión directa con la API REST de WooCommerce  
-- Gestión centralizada de credenciales mediante archivo `.env`  
-- Exportación automática de información a Excel (XLSX)  
-- Indicadores de progreso en tiempo real  
-- Arquitectura modular y escalable  
-- Separación clara entre lógica de negocio y presentación (MVC)  
-- Diseñada para usuarios no técnicos  
+## Validaciones
+- No se muestran celdas vacías: si WooCommerce no trae un dato, se muestra **N/A**.
+- No se permiten valores negativos en cálculos (totales, descuentos, utilidades, precios calculados, etc.).
+- Cuando un botón está deshabilitado (por ejemplo **Exportar**), al hacer clic se muestra un mensaje indicando **por qué**.
 
----
+## Columnas dinámicas
+Algunas columnas son opcionales y solo se muestran si existen en la tienda.
+Ejemplo: en **Reporte de Ventas**, la columna **Identificación** se muestra únicamente si se encuentra en los datos (billing/meta_data). Si no existe en ningún pedido, la columna no aparece.
 
-## Módulos del Sistema
+## Módulos
+- **Reporte de Ventas**: genera pedidos por rango de fechas, muestra métricas y exporta.
+- **Inventario**: lista productos simples y variables con filtros de stock.
+- **Actualizar Productos**: carga un archivo (CSV/XLSX) para preparar actualizaciones y enviar cambios a WooCommerce.
+- **Lista de Distribuidores**: calcula PVP/PVD/ganancia/descuentos y exporta una lista para distribuidores.
 
-### Reporte de Ventas
-- Selección de rango de fechas con validación
-- Obtención de órdenes desde WooCommerce
-- Visualización en dos pestañas:
-  - Productos Simples
-  - Productos Variados
-- Exportación automática a Excel
-- Barra de progreso durante la generación
-- Encabezados estandarizados en mayúsculas y negrita
-
-### Inventario
-- Filtros disponibles:
-  - Todos los productos
-  - Productos con stock
-  - Productos sin stock
-- Visualización en dos pestañas:
-  - Productos Simples
-  - Productos Variados
-- Exportación del inventario a Excel
-- Selección exclusiva de filtros
-- Progreso visual durante la carga de datos
-
-### Actualizar Productos
-- Carga de archivos Excel o CSV
-- Validación de formato y encabezados:
-  - SKU
-  - PRECIO_VENTA
-- Actualización masiva de productos en WooCommerce
-- Edición controlada desde la tabla:
-  - Stock
-  - Precio de compra
-  - Precio de venta
-- Estado de actualización:
-  - Actualizado
-  - Sin actualizar
-- Exportación del resultado final a Excel
-
-### Lista de Distribuidores
-- Obtención de productos desde WooCommerce
-- Cálculo de precios, descuentos y márgenes
-- Visualización en tablas con encabezados definidos
-- Exportación a Excel con formato específico para distribuidores
-- Barra de progreso y mensajes de estado
-
----
-
-## Menú y Navegación
-
-- Menú principal con acceso a todos los módulos
-- Menú superior:
-  - WooCommerce → Credenciales API
-  - Ayuda → Acerca de
-
-### Acerca de
-- PyWoo v1  
-- Aplicación de gestión administrativa para WooCommerce  
-- Desarrollado por Sami Aldaz  
-
----
-
-## Estructura del Proyecto
-
-```
-
-PyWoo/
-├── pywoo.py
-├── requirements.txt
-├── README.md
-├── .env
-│
-├── app/
-│   ├── core/
-│   │   ├── cliente_woocommerce.py
-│   │   ├── configuracion.py
-│   │   ├── excepciones.py
-│   │   ├── dialogos.py
-│   │   └── controlador_credenciales.py
-│   │
-│   ├── menu/
-│   │   ├── menu_view.py
-│   │   └── ui/
-│   │
-│   ├── reporte_ventas/
-│   ├── inventario/
-│   ├── actualizar_productos/
-│   └── lista_distribuidores/
-│
-└── assets/
-
-````
-
----
+## Requisitos
+- Python 3.9+ (recomendado 3.10+)
+- Conexión a internet
+- Tienda WooCommerce con API habilitada
 
 ## Instalación
+1) Crear y activar entorno virtual
 
-### Requisitos Previos
-- Python 3.9 o superior
-- pip
-- Conexión a Internet
-- Acceso a una tienda WooCommerce con API habilitada
+```bash
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
+```
 
-### Instalación de Dependencias
+2) Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
-````
+```
 
-### Dependencias Principales
+## Configuración de credenciales
+Puedes configurar credenciales desde la UI: **WooCommerce → Credenciales API**.
 
-* PySide6
-* requests
-* openpyxl
-* python-dotenv
-
----
-
-## Configuración
-
-### Archivo .env
-
-Crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+Opcionalmente también puedes usar un archivo `.env` en la raíz del proyecto:
 
 ```env
 WC_URL=https://tu-tienda.com
@@ -149,64 +63,27 @@ WC_KEY=ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 WC_SECRET=cs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### Obtener Credenciales de WooCommerce
-
-1. Ingresar al panel de WordPress
-2. WooCommerce → Configuración → Avanzado → API REST
-3. Crear una nueva clave
-4. Asignar permisos de Lectura y Escritura
-5. Copiar el Consumer Key y Consumer Secret
-
----
-
 ## Ejecución
 
 ```bash
 python pywoo.py
 ```
 
-Al iniciar, la aplicación mostrará la ventana de Credenciales API y posteriormente el Menú Principal.
+## Estructura del proyecto (resumen)
 
----
-
-## Arquitectura del Sistema
-
-### Principios Aplicados
-
-* Modelo–Vista–Controlador (MVC)
-* Separación de responsabilidades
-* Código reutilizable y mantenible
-* Arquitectura modular
-
-### Beneficios
-
-* Fácil incorporación de nuevos módulos
-* Código claro y documentado
-* Interfaz desacoplada de la lógica de negocio
-
----
-
-## Manejo de Errores
-
-* Validación de credenciales
-* Manejo de errores de conexión con WooCommerce
-* Mensajes claros para el usuario
-* Uso de excepciones personalizadas (PyWooError)
-
----
+```
+PyWoo/
+├── pywoo.py
+├── requirements.txt
+├── README.md
+└── app/
+    ├── core/
+    ├── menu/
+    ├── reporte_ventas/
+    ├── inventario/
+    ├── actualizar_productos/
+    └── lista_distribuidores/
+```
 
 ## Licencia
-
-Proyecto académico y de uso interno.
-No destinado a distribución comercial.
-
----
-
-## Autor
-
-Sami Aldaz
-PyWoo v1
-Aplicación de Gestión WooCommerce con PySide6
-
-```
-```
+Proyecto académico / uso interno.

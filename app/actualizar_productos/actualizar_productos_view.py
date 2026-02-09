@@ -2,11 +2,11 @@
 import os
 
 from PySide6.QtCore import QThread, QDate, Qt
-from PySide6.QtWidgets import QFileDialog, QHeaderView
+from PySide6.QtWidgets import QFileDialog, QHeaderView, QHBoxLayout, QLabel, QLineEdit, QPushButton
 from shiboken6 import isValid
 
 from app.actualizar_productos.ui.ui_view_actualizar_productos import Ui_ActualizarProductos
-from app.actualizar_productos.controlador_actualizar_productos import ControladorActualizarProductos
+from app.actualizar_productos.controlador_actualizar_productos import ControladorActualizarProductos, COL_CATEGORIA, COL_PRECIO_COMPRA
 from app.actualizar_productos.worker_actualizar_productos import (
     WorkerActualizarProductos,
     WorkerAplicarCambios,
@@ -15,6 +15,8 @@ from app.actualizar_productos.worker_actualizar_productos import (
 from app.core.base_windows import BaseModuleWindow
 from app.core.proceso import ProcessDialog
 from app.core.dialogos import mostrar_error, mostrar_info
+from app.core.table_enhancer import TableEnhancer
+from app.core.disabled_click_filter import DisabledClickFilter
 
 
 class ActualizarProductosView(BaseModuleWindow):
@@ -28,6 +30,11 @@ class ActualizarProductosView(BaseModuleWindow):
 
         self.ui = Ui_ActualizarProductos()
         self.ui.setupUi(self)
+
+        # Estado del botón Exportar (para explicar por qué está bloqueado)
+        self._export_reason: str = ""
+        self._export_filter = DisabledClickFilter(self, lambda: self._export_reason, title="Exportar deshabilitado")
+        self.ui.btnExportar.installEventFilter(self._export_filter)
 
         self._build_menu()
 
@@ -48,6 +55,10 @@ class ActualizarProductosView(BaseModuleWindow):
         self._configurar_estado()
         self._conectar()
 
+        # --- Sorting + Buscador (SKU/NOMBRE) ---
+        self._enhancer = TableEnhancer((self.ui.tableSimples, self.ui.tableVariados), search_columns=(0, 1))
+        self._crear_buscador()
+
     # ----------------------------
     # UI
     # ----------------------------
@@ -58,19 +69,50 @@ class ActualizarProductosView(BaseModuleWindow):
             header.setStretchLastSection(True)
             tabla.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
+    def _crear_buscador(self):
+        """Agrega un buscador al layout (sin tocar el .ui generado)."""
+        layout = self.ui.layoutMain
+        fila = QHBoxLayout()
+
+        lbl = QLabel("Buscar:")
+        self._txt_buscar = QLineEdit()
+        self._txt_buscar.setPlaceholderText("Buscar por SKU o nombre…")
+        fila.addWidget(lbl)
+        fila.addWidget(self._txt_buscar, 1)
+        # Inserta después de la barra de progreso (antes de tabs)
+        layout.insertLayout(3, fila)
+
+        self._txt_buscar.textChanged.connect(self._on_buscar)
+    def _tabla_activa(self):
+        return self.ui.tableSimples if self.ui.tabWidget.currentIndex() == 0 else self.ui.tableVariados
+
+    def _on_buscar(self, txt: str):
+        self._enhancer.apply_search(self._tabla_activa(), txt)
+
     def _configurar_estado(self):
-        self.ui.btnExportar.setEnabled(False)
+        self._set_export_enabled(False, "Primero procesa el archivo y aplica cambios para habilitar Exportar.")
         self.ui.btnAplicar.setEnabled(False)
         self.ui.labelEstado.setText("")
         self.ui.progressBar.setValue(0)
         self.ui.lblProcesando.setText("")
 
+    def _set_export_enabled(self, enabled: bool, reason: str = "") -> None:
+        self.ui.btnExportar.setEnabled(enabled)
+        self._export_reason = "" if enabled else (reason or "Exportar no está disponible.")
+        self.ui.btnExportar.setToolTip("" if enabled else self._export_reason)
+
     def _set_ocupado(self, ocupado: bool):
         self._ocupado = ocupado
         self.ui.btnSubirArchivo.setEnabled(not ocupado)
         self.ui.btnVolver.setEnabled(not ocupado)
-        # ✅ Exportar SOLO si ya se aplicó
-        self.ui.btnExportar.setEnabled((not ocupado) and self._aplicado)
+        # ✅ Exportar SOLO si ya se aplicó (y no está ocupado)
+        if ocupado:
+            self._set_export_enabled(False, "Procesando... espera a que termine para exportar.")
+        else:
+            if self._aplicado:
+                self._set_export_enabled(True)
+            else:
+                self._set_export_enabled(False, "Aplica los cambios para habilitar Exportar.")
         # Aplicar se habilita cuando hay procesado
         self.ui.btnAplicar.setEnabled((not ocupado) and self._procesado)
 
@@ -151,10 +193,11 @@ class ActualizarProductosView(BaseModuleWindow):
 
         self._procesado = False
         self._aplicado = False  # ✅ reset: exportar bloqueado hasta aplicar
-        self.ui.btnExportar.setEnabled(False)
+        self._set_export_enabled(False, "Procesando... primero aplica cambios para exportar.")
         self.ui.btnAplicar.setEnabled(False)
-        self.ui.tableSimples.setModel(None)
-        self.ui.tableVariados.setModel(None)
+        self._enhancer.clear()
+        if getattr(self, "_txt_buscar", None):
+            self._txt_buscar.setText("")
 
         self.dialogo = ProcessDialog(self)
         self.dialogo.set_titulo("Procesando Productos")
@@ -235,17 +278,46 @@ class ActualizarProductosView(BaseModuleWindow):
                 pass
             self.dialogo = None
 
+    def _aplicar_columnas_dinamicas(self):
+        # Oculta columnas opcionales si no existen datos reales en la data
+        def tiene_valor(s: str) -> bool:
+            return bool((s or '').strip()) and str(s).strip().upper() != 'N/A'
+
+        # Columnas opcionales típicas en este módulo
+        # - CATEGORÍA: algunas tiendas no envían categorías
+        # - PRECIO COMPRA: campo custom, puede no existir
+        col_checks = {
+            COL_CATEGORIA: lambda r: tiene_valor(getattr(r, 'categoria', '') or ''),
+            COL_PRECIO_COMPRA: lambda r: tiene_valor(getattr(r, 'precio_compra', '') or ''),
+        }
+
+        pares = [
+            (self.ui.tableSimples, getattr(self.controlador, 'simples', [])),
+            (self.ui.tableVariados, getattr(self.controlador, 'variados', [])),
+        ]
+
+        for tabla, registros in pares:
+            for col, pred in col_checks.items():
+                ok = any(pred(r) for r in (registros or []))
+                try:
+                    tabla.setColumnHidden(col, not ok)
+                except Exception:
+                    pass
+
     def _finalizar_proceso(self, modelo_simples, modelo_variados):
         self._cerrar_dialogo()
 
-        self.ui.tableSimples.setModel(modelo_simples)
-        self.ui.tableVariados.setModel(modelo_variados)
+        # ✅ sorting + filtrado (proxy) para ambos tabs
+        self._enhancer.set_models((modelo_simples, modelo_variados))
+
+        # Ocultar columnas opcionales si no existen en la data
+        self._aplicar_columnas_dinamicas()
 
         self.ui.labelEstado.setText("Productos procesados correctamente")
         self._procesado = True
 
         # ✅ Exportar sigue bloqueado hasta aplicar
-        self.ui.btnExportar.setEnabled(False)
+        self._set_export_enabled(False, "Aplica los cambios para habilitar Exportar.")
 
         self._set_ocupado(False)
         mostrar_info("Productos procesados correctamente.", self)
@@ -254,7 +326,7 @@ class ActualizarProductosView(BaseModuleWindow):
         self._cerrar_dialogo()
         self._aplicado = True  # ✅ ahora sí se puede exportar
         self._set_ocupado(False)
-        self.ui.btnExportar.setEnabled(True)
+        self._set_export_enabled(True)
         mostrar_info("Cambios aplicados correctamente.", self)
 
     def _error(self, mensaje):
@@ -265,6 +337,20 @@ class ActualizarProductosView(BaseModuleWindow):
     # ----------------------------
     # Exportar
     # ----------------------------
+    def _filas_ordenadas(self, tabla):
+        """Filas en el orden visible (proxy: filtro + sort)."""
+        modelo = tabla.model()
+        if modelo is None:
+            return []
+        filas = []
+        for r in range(modelo.rowCount()):
+            fila = []
+            for c in range(modelo.columnCount()):
+                fila.append(modelo.index(r, c).data(Qt.DisplayRole))
+            filas.append(fila)
+        return filas
+
+
     def _exportar(self):
         if self._ocupado:
             return
@@ -285,7 +371,7 @@ class ActualizarProductosView(BaseModuleWindow):
 
         if ruta:
             try:
-                self.controlador.exportar_excel(ruta)
+                self.controlador.exportar_excel(ruta, simples=self._filas_ordenadas(self.ui.tableSimples), variados=self._filas_ordenadas(self.ui.tableVariados))
                 mostrar_info("Archivo exportado correctamente.", self)
             except Exception as e:
                 mostrar_error(str(e), self)
