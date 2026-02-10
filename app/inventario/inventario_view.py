@@ -239,15 +239,37 @@ class InventarioView(BaseModuleWindow):
     # Exportar
     # --------------------------------------------------
     def _filas_ordenadas(self, tabla):
-        """Filas en el orden visible (proxy: filtro + sort)."""
-        modelo = tabla.model()
-        if modelo is None:
+        """Filas en el orden visible (proxy: filtro + sort).
+
+        Importante: nuestras tablas usan un QSortFilterProxyModel (TableEnhancer).
+        Para exportar sin errores y respetando el orden visible, devolvemos los
+        dicts originales del modelo fuente (no una lista de strings de la UI).
+        """
+        proxy = tabla.model()
+        if proxy is None:
             return []
+
+        # Caso esperado: proxy (MultiColumnSortFilterProxy) -> source (QAbstractTableModel)
+        source = getattr(proxy, "sourceModel", lambda: None)()
+        datos = getattr(source, "_datos", None)
+
+        if isinstance(datos, list):
+            filas = []
+            for r in range(proxy.rowCount()):
+                try:
+                    src_idx = proxy.mapToSource(proxy.index(r, 0))
+                    filas.append(datos[src_idx.row()])
+                except Exception:
+                    # Fallback seguro (no debería pasar)
+                    filas.append({})
+            return filas
+
+        # Fallback genérico: exportar lo que se ve (lista de valores)
         filas = []
-        for r in range(modelo.rowCount()):
+        for r in range(proxy.rowCount()):
             fila = []
-            for c in range(modelo.columnCount()):
-                fila.append(modelo.index(r, c).data(Qt.DisplayRole))
+            for c in range(proxy.columnCount()):
+                fila.append(proxy.index(r, c).data(Qt.DisplayRole))
             filas.append(fila)
         return filas
 

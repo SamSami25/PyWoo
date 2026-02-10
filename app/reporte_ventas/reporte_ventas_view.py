@@ -286,6 +286,40 @@ class ReporteVentasView(BaseModuleWindow):
     # --------------------------------------------------
     # Exportar
     # --------------------------------------------------
+    def _filas_ordenadas(self):
+        """Devuelve dicts en el orden visible (proxy: filtro + sort).
+
+        ControladorReporteVentas.exportar_excel espera una lista[dict] con keys.
+        La tabla usa QSortFilterProxyModel, así que mapeamos proxy -> source.
+        """
+        proxy = self.ui.tableSimples.model()
+        if proxy is None:
+            return []
+
+        source = getattr(proxy, "sourceModel", lambda: None)()
+        datos = getattr(source, "_datos", None)
+        if not isinstance(datos, list):
+            datos = getattr(source, "_pedidos", None)
+
+        if isinstance(datos, list):
+            filas = []
+            for r in range(proxy.rowCount()):
+                try:
+                    src_idx = proxy.mapToSource(proxy.index(r, 0))
+                    filas.append(datos[src_idx.row()])
+                except Exception:
+                    filas.append({})
+            return filas
+
+        # Fallback: lo que se ve (puede perder keys, pero evita crashear)
+        filas = []
+        for r in range(proxy.rowCount()):
+            fila = {}
+            for c in range(proxy.columnCount()):
+                fila[str(c)] = proxy.index(r, c).data(Qt.DisplayRole)
+            filas.append(fila)
+        return filas
+
     def _exportar(self):
         if not self._generado:
             mostrar_error("Debe generar el reporte primero.", self)
