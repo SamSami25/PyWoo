@@ -1,4 +1,3 @@
-# app/menu/menu_view.py
 from __future__ import annotations
 
 import os

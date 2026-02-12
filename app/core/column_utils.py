@@ -4,7 +4,6 @@ from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple
 
 
 def _is_present(v: Any) -> bool:
-    """True si el valor cuenta como "dato real" (no vacío)."""
     if v is None:
         return False
     if isinstance(v, str):
@@ -18,11 +17,7 @@ def prune_empty_columns(
     keys: Sequence[str],
     optional_keys: Iterable[str],
 ) -> Tuple[List[str], List[str]]:
-    """Quita columnas opcionales que no tengan datos reales en ninguna fila.
 
-    - Solo afecta a columnas incluidas en optional_keys.
-    - Conserva el orden original de headers/keys.
-    """
     opt: Set[str] = set(optional_keys)
     present: Set[str] = set()
 

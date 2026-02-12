@@ -1,14 +1,6 @@
-# app/core/validaciones.py
 import re
 
-
 def validar_numero(valor, permitir_decimal=False):
-    """
-    Reglas:
-    - No negativos
-    - Enteros: 1 a 4 dígitos
-    - Decimales: hasta 2 decimales
-    """
     if valor is None:
         return 0
 
@@ -28,12 +20,6 @@ def validar_numero(valor, permitir_decimal=False):
 
 
 def normalizar_decimal_api(valor):
-    """
-    Para datos que vienen de WooCommerce:
-    - Nunca lanza excepción
-    - No negativos
-    - Máx 2 decimales
-    """
     try:
         if valor in (None, "", " "):
             return 0.0

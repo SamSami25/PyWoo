@@ -1,4 +1,3 @@
-# app/core/configuracion.py
 import os
 import json
 

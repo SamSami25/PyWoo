@@ -1,8 +1,8 @@
-# app/reporte_ventas/controlador_reporte_ventas.py
 from __future__ import annotations
 
 from typing import Callable, Optional, Any
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+import re
 
 from PySide6.QtCore import QAbstractTableModel, Qt
 from PySide6.QtGui import QFont
@@ -26,7 +26,7 @@ COLUMN_KEYS = [
 
 
 def _safe_str(x) -> str:
-    # Evita celdas vacías (requisito: no vacíos)
+    # Evita celdas vacías
     if x is None:
         return "N/A"
     s = str(x)
@@ -69,6 +69,23 @@ def _estado_es(status: str) -> str:
         "trash": "Eliminado",
     }
     return mapa.get(s, status or "")
+
+
+def _normalizar_doc(v: Any) -> str | None:
+    """Devuelve cédula/RUC válida (solo dígitos 10 o 13). Evita hashes/alfanuméricos."""
+    if v is None:
+        return None
+    s = str(v).strip()
+    if not s:
+        return None
+
+    s = re.sub(r"[\s\-]", "", s)  # quita espacios y guiones
+
+    # Ecuador: cédula 10 / RUC 13
+    if re.fullmatch(r"\d{10}|\d{13}", s):
+        return s
+
+    return None
 
 
 class ModeloTablaReporteVentas(QAbstractTableModel):
@@ -123,30 +140,44 @@ class ControladorReporteVentas:
         self._keys = list(COLUMN_KEYS)
 
     def _extraer_identificacion(self, o: dict) -> str | None:
-        """Intenta encontrar identificación (cédula/RUC/DNI/VAT) desde billing/meta_data."""
+        """
+        Identificación real (cédula/RUC/DNI/VAT) desde billing/meta_data.
+        *NO* usa 'tax' por contiene-texto (porque trae basura/hash).
+        Solo acepta números 10 o 13 (EC).
+        """
         billing = o.get("billing") or {}
-        # 1) billing directo (por si existe campo custom)
-        for k in ("identificacion", "identificación", "cedula", "cédula", "dni", "ruc", "vat", "nif", "tax_id"):
-            v = billing.get(k)
-            if v and str(v).strip():
-                return str(v).strip()
 
-        # 2) meta_data (Woo devuelve lista de dicts con 'key' y 'value')
+        # Lista blanca billing
+        allow_billing = {
+            "identificacion", "identificación", "cedula", "cédula", "dni", "ruc",
+            "tax_id", "vat", "nif", "billing_ruc", "billing_cedula",
+        }
+
+        for k in billing.keys():
+            kk = str(k).strip().lower()
+            if kk in allow_billing:
+                doc = _normalizar_doc(billing.get(k))
+                if doc:
+                    return doc
+
+        # Lista blanca meta_data
+        allow_meta = {
+            "identificacion", "identificación", "cedula", "cédula", "dni", "ruc",
+            "tax_id", "vat_number", "billing_vat", "billing_ruc", "billing_cedula",
+            "_billing_ruc", "_billing_cedula",
+        }
+
         for md in (o.get("meta_data") or []):
             key = str(md.get("key") or "").strip().lower()
-            if not key:
+            if not key or key not in allow_meta:
                 continue
-            if any(t in key for t in ("ident", "ced", "dni", "ruc", "vat", "nif", "tax")):
-                v = md.get("value")
-                if v is None:
-                    continue
-                s = str(v).strip()
-                if s:
-                    return s
+            doc = _normalizar_doc(md.get("value"))
+            if doc:
+                return doc
+
         return None
 
     def _extraer_cajero(self, o: dict) -> str | None:
-        # Normalmente viene por meta de POS, plugin o método de pago
         for md in (o.get("meta_data") or []):
             key = str(md.get("key") or "").strip().lower()
             if any(t in key for t in ("cashier", "cajero", "pos", "seller", "vendedor")):
@@ -158,14 +189,13 @@ class ControladorReporteVentas:
                     return s
         return None
 
-    # ---------------- GENERAR ----------------
     def generar_reporte(
         self,
         desde,
         hasta,
         callback_progreso: Optional[Callable[[int, str], None]] = None,
         should_cancel: Optional[Callable[[], bool]] = None,
-        **_kwargs,  # ✅ por si mañana pasas otro param, no revienta
+        **_kwargs,
     ):
         pedidos = self.cliente.obtener_pedidos(desde=desde, hasta=hasta)
 
@@ -174,7 +204,6 @@ class ControladorReporteVentas:
 
         for i, o in enumerate(pedidos, start=1):
             if should_cancel and should_cancel():
-                # ✅ cancelación controlada (silenciosa en UI)
                 raise RuntimeError("__CANCELADO__")
 
             pedido_id = o.get("id", "")
@@ -202,12 +231,10 @@ class ControladorReporteVentas:
             identificacion = self._extraer_identificacion(o)
             cajero = self._extraer_cajero(o)
 
-            # Valores (tu lógica actual)
             subtotal = Decimal("0")
             for li in (o.get("line_items") or []):
                 subtotal += _to_decimal(li.get("subtotal"))
 
-            # ✅ Evita negativos en cálculos
             subtotal = _clamp_nonneg_dec(subtotal)
             envio = _clamp_nonneg_dec(_to_decimal(o.get("shipping_total")))
             iva = _clamp_nonneg_dec(_to_decimal(o.get("total_tax")))
@@ -224,7 +251,6 @@ class ControladorReporteVentas:
                 "total": _money_dec(total_orden),
                 "utilidad": _money_dec(Decimal("0")),
                 "estado": estado or "N/A",
-                # NOTA: si ninguna orden tiene notas, ocultamos la columna completa.
                 "notas": (o.get("customer_note") or "").strip() or None,
                 "pedido": pedido_id or "N/A",
                 "identificacion": identificacion,
@@ -243,7 +269,6 @@ class ControladorReporteVentas:
                     f"Procesando pedido {i} de {total}"
                 )
 
-        # Quitar columnas opcionales que estén totalmente vacías / inexistentes
         optional = {
             "identificacion",
             "correo",
@@ -259,7 +284,6 @@ class ControladorReporteVentas:
         modelo_vacio = ModeloTablaReporteVentas([], self._headers, self._keys)
         return modelo_principal, modelo_vacio
 
-    # ---------------- EXPORTAR ----------------
     def exportar_excel(self, ruta: str, filas=None):
         workbook = xlsxwriter.Workbook(ruta)
 

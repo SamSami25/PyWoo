@@ -1,4 +1,3 @@
-# app/inventario/inventario_view.py
 from __future__ import annotations
 
 from PySide6.QtCore import QThread, QDate, Qt
@@ -23,12 +22,11 @@ class InventarioView(BaseModuleWindow):
         self.ui = Ui_Inventario()
         self.ui.setupUi(self)
 
-        # Estado del botón Exportar (para explicar por qué está bloqueado)
+        # Estado del botón Exportar
         self._export_reason: str = ""
         self._export_filter = DisabledClickFilter(self, lambda: self._export_reason, title="Exportar deshabilitado")
         self.ui.btnExportar.installEventFilter(self._export_filter)
 
-        # ✅ Por defecto arrancar en "Productos simples" (tab 0)
         try:
             self.ui.tabWidget.setCurrentIndex(0)
         except Exception:
@@ -43,8 +41,8 @@ class InventarioView(BaseModuleWindow):
         self._generado = False
         self._ocupado = False
 
-        # --- Sorting + Buscador (SKU/NOMBRE) ---
-        # IMPORTANTE: se crea antes de activar checkTodos (que limpia tablas).
+        # Buscador
+        # Limpia tablas.
         self._enhancer = TableEnhancer((self.ui.tableSimples, self.ui.tableVariados), search_columns=(0, 1))
 
         self._configurar_tablas()
@@ -53,9 +51,6 @@ class InventarioView(BaseModuleWindow):
         self._configurar_estado()
         self._conectar()
 
-    # --------------------------------------------------
-    # UI
-    # --------------------------------------------------
     def _configurar_tablas(self):
         for tabla in (self.ui.tableSimples, self.ui.tableVariados):
             header = tabla.horizontalHeader()
@@ -71,7 +66,6 @@ class InventarioView(BaseModuleWindow):
         self._txt_buscar.setPlaceholderText("Buscar por SKU o nombre…")
         fila.addWidget(lbl)
         fila.addWidget(self._txt_buscar, 1)
-        # Inserta después del bloque de progreso (antes de tabs)
         layout.insertLayout(3, fila)
 
         self._txt_buscar.textChanged.connect(self._on_buscar)
@@ -103,9 +97,7 @@ class InventarioView(BaseModuleWindow):
         self.ui.btnExportar.clicked.connect(self._exportar)
         self.ui.btnVolver.clicked.connect(self._volver_menu)
 
-    # --------------------------------------------------
-    # CHECKS (solo uno activo)
-    # --------------------------------------------------
+
     def _reset_checks(self, activo):
         for chk in (self.ui.checkTodos, self.ui.checkSinStock, self.ui.checkConStock):
             if chk is not activo:
@@ -126,9 +118,7 @@ class InventarioView(BaseModuleWindow):
         if checked:
             self._reset_checks(self.ui.checkConStock)
 
-    # --------------------------------------------------
-    # Navegación
-    # --------------------------------------------------
+
     def _volver_menu(self):
         if self._ocupado:
             return
@@ -137,7 +127,6 @@ class InventarioView(BaseModuleWindow):
             self.menu_controller.show()
 
     def closeEvent(self, event):
-        # ✅ al cerrar con X, el menú vuelve a mostrarse
         self._detener_hilo()
         try:
             if self.menu_controller:
@@ -146,9 +135,7 @@ class InventarioView(BaseModuleWindow):
             pass
         event.accept()
 
-    # --------------------------------------------------
-    # Hilos
-    # --------------------------------------------------
+
     def _detener_hilo(self):
         if self.thread and isValid(self.thread):
             try:
@@ -160,9 +147,7 @@ class InventarioView(BaseModuleWindow):
         self.thread = None
         self.worker = None
 
-    # --------------------------------------------------
-    # Generar
-    # --------------------------------------------------
+
     def _generar(self):
         if self._ocupado:
             return
@@ -209,7 +194,6 @@ class InventarioView(BaseModuleWindow):
             self.dialogo.close()
             self.dialogo = None
 
-        # ✅ sorting + filtrado (proxy) para ambos tabs
         self._enhancer.set_models((modelo_simples, modelo_variados))
 
         self.ui.labelEstado.setText("Inventario generado correctamente")
@@ -235,21 +219,12 @@ class InventarioView(BaseModuleWindow):
         self._ocupado = False
         mostrar_error(mensaje, self)
 
-    # --------------------------------------------------
-    # Exportar
-    # --------------------------------------------------
-    def _filas_ordenadas(self, tabla):
-        """Filas en el orden visible (proxy: filtro + sort).
 
-        Importante: nuestras tablas usan un QSortFilterProxyModel (TableEnhancer).
-        Para exportar sin errores y respetando el orden visible, devolvemos los
-        dicts originales del modelo fuente (no una lista de strings de la UI).
-        """
+    def _filas_ordenadas(self, tabla):
         proxy = tabla.model()
         if proxy is None:
             return []
 
-        # Caso esperado: proxy (MultiColumnSortFilterProxy) -> source (QAbstractTableModel)
         source = getattr(proxy, "sourceModel", lambda: None)()
         datos = getattr(source, "_datos", None)
 
@@ -260,11 +235,10 @@ class InventarioView(BaseModuleWindow):
                     src_idx = proxy.mapToSource(proxy.index(r, 0))
                     filas.append(datos[src_idx.row()])
                 except Exception:
-                    # Fallback seguro (no debería pasar)
                     filas.append({})
             return filas
 
-        # Fallback genérico: exportar lo que se ve (lista de valores)
+
         filas = []
         for r in range(proxy.rowCount()):
             fila = []
@@ -303,9 +277,7 @@ class InventarioView(BaseModuleWindow):
             except Exception as e:
                 mostrar_error(str(e), self)
 
-    # --------------------------------------------------
-    # Helpers
-    # --------------------------------------------------
+
     def _obtener_filtro(self):
         if self.ui.checkSinStock.isChecked():
             return "sin_stock"
@@ -314,8 +286,6 @@ class InventarioView(BaseModuleWindow):
         return "todos"
 
     def _limpiar_tablas(self):
-        # En __init__ se dispara checkTodos.setChecked(True) antes de crear el enhancer.
-        # Por eso protegemos la llamada.
         if hasattr(self, "_enhancer"):
             self._enhancer.clear()
         if getattr(self, "_txt_buscar", None):

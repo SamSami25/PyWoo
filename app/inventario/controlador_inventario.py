@@ -1,4 +1,3 @@
-# app/inventario/controlador_inventario.py
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -78,7 +77,7 @@ def _estado_texto(stock: int, filtro: str, manage_stock: bool, stock_status: str
     Si manage_stock=True, el estado lo determina stock_quantity.
     """
     if not manage_stock:
-        # Estado por stock_status (sin inventar cantidades)
+        # Estado por stock
         if stock_status == "instock":
             return "En Stock"
         return "Sin Stock"
@@ -194,9 +193,6 @@ class ControladorInventario:
     def variados(self):
         return self._variados
 
-    # -----------------------------
-    # Helpers variaciones
-    # -----------------------------
     def _nombre_variacion(self, producto: dict, variacion: dict) -> str:
         base = (producto.get("name") or "").strip()
         attrs = variacion.get("attributes") or []
@@ -210,13 +206,9 @@ class ControladorInventario:
             return f"{base} ({' | '.join(parts)})"
         return base or "Variación"
 
-    # -----------------------------
-    # GENERAR
-    # -----------------------------
     def generar_inventario(self, filtro: str, callback_progreso=None):
         self._ultimo_filtro = filtro
 
-        # ✅ Tu cliente YA pagina productos, así que esto trae TODOS.
         productos = self.cliente.obtener_productos(per_page=100, filtro_stock=None)
         total = max(len(productos), 1)
 
@@ -232,7 +224,6 @@ class ControladorInventario:
                 if not producto_id:
                     continue
 
-                # ✅ traer TODAS las variaciones (tu cliente ya pagina)
                 variaciones = self.cliente.obtener_variaciones_producto(int(producto_id), per_page=100)
 
                 for v in variaciones:
@@ -248,13 +239,13 @@ class ControladorInventario:
                     fila = {
                         "sku": ((v.get("sku") or "").strip() or "(SIN SKU)"),
                         "nombre": (self._nombre_variacion(p, v) or "(SIN NOMBRE)"),
-                        # Si NUNCA viene categoría en tu tienda, se oculta la columna.
+
                         "categoria": (categorias or None),
                         "stock": stock,
                         "precio": _fmt_precio(precio),
-                        # Si NUNCA viene estado, se oculta la columna.
+
                         "estado": ((p.get("status", "") or "").strip() or None),
-                        # internos para estado/filtro correctos
+
                         "__manage_stock__": manage,
                         "__stock_status__": st_status,
                         "__tipo__": "variable",
@@ -285,7 +276,6 @@ class ControladorInventario:
             if callback_progreso:
                 callback_progreso(int((i / total) * 100), f"Procesando producto {i} de {total}")
 
-        # Quitar columnas opcionales que estén totalmente vacías / inexistentes
         optional = {"categoria", "estado"}
         combinadas = list(self._simples) + list(self._variados)
         self._headers, self._keys = prune_empty_columns(combinadas, HEADERS, COLUMN_KEYS, optional)
@@ -295,9 +285,6 @@ class ControladorInventario:
             ModeloTablaInventario(self._variados, filtro, self._headers, self._keys),
         )
 
-    # -----------------------------
-    # EXPORTAR
-    # -----------------------------
     def exportar_excel(self, ruta: str, filtro: Optional[str] = None, simples=None, variados=None):
         if filtro is None:
             filtro = self._ultimo_filtro

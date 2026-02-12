@@ -1,4 +1,3 @@
-# app/core/rutas.py
 import os
 
 

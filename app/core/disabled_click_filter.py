@@ -1,4 +1,3 @@
-# app/core/disabled_click_filter.py
 from __future__ import annotations
 
 from typing import Callable, Optional
@@ -21,9 +20,8 @@ class DisabledClickFilter(QObject):
         self._reason_getter = reason_getter
         self._title = title
 
-    def eventFilter(self, obj, event) -> bool:  # noqa: N802 (Qt naming)
+    def eventFilter(self, obj, event) -> bool:
         if event.type() == QEvent.MouseButtonPress:
-            # obj será el botón al que se le instaló el filter
             try:
                 enabled = bool(obj.isEnabled())
             except Exception:

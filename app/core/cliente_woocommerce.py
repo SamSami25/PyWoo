@@ -1,4 +1,3 @@
-# app/core/cliente_woocommerce.py
 import requests
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, datetime, time
@@ -6,18 +5,8 @@ from datetime import date, datetime, time
 from app.core.configuracion import Configuracion
 from app.core.excepciones import WooCommerceConexionError
 
-
 class ClienteWooCommerce:
     def __init__(self, override_cred: dict | None = None):
-        """
-        override_cred opcional para probar conexión sin guardar credenciales.
-        Formato esperado:
-        {
-            "url": "...",
-            "consumer_key": "...",
-            "consumer_secret": "..."
-        }
-        """
         if override_cred is not None:
             cred = override_cred
         else:
@@ -38,13 +27,9 @@ class ClienteWooCommerce:
         self.base_url = f"{url}/wp-json/wc/v3"
         self.auth = (ck, cs)
 
-        # ✅ Cachés para reducir llamadas repetidas (mejora fuerte en módulos grandes)
         self._cache_productos: dict[int, dict] = {}
         self._cache_variaciones: dict[tuple[int, int], dict] = {}
 
-    # -----------------------------
-    # Helpers de caché
-    # -----------------------------
     def obtener_producto(self, producto_id: int) -> dict:
         """Obtiene un producto por ID con caché en memoria."""
         if producto_id in self._cache_productos:
@@ -92,14 +77,8 @@ class ClienteWooCommerce:
         except Exception as e:
             raise WooCommerceConexionError(str(e))
 
-    # -----------------------------
-    # Helpers de fecha (RFC3339)
-    # -----------------------------
     def _to_rfc3339_utc(self, d, end_of_day: bool = False) -> str:
-        """
-        WooCommerce espera RFC3339 con zona horaria (Z o +00:00).
-        Ej: 2026-02-04T00:00:00Z
-        """
+
         if isinstance(d, datetime):
             dt = d
         elif isinstance(d, date):
@@ -111,8 +90,8 @@ class ClienteWooCommerce:
 
     def obtener_pedidos(self, desde=None, hasta=None, per_page=100):
         """
-        ✅ Filtra correctamente por rango de fechas usando RFC3339 con Z.
-        ✅ Incluye status=any para traer todos los estados dentro del rango.
+        Filtra correctamente por rango de fechas usando RFC3339 con Z.
+        Incluye status=any para traer todos los estados dentro del rango.
         """
         page = 1
         todos = []

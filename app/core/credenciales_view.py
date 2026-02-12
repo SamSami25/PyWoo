@@ -1,4 +1,3 @@
-# app/core/credenciales_view.py
 from __future__ import annotations
 
 from PySide6.QtWidgets import QDialog, QLineEdit

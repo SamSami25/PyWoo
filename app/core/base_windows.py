@@ -1,4 +1,3 @@
-# app/core/base_windows.py
 from __future__ import annotations
 
 import os
@@ -12,9 +11,7 @@ from app.core.dialogos import mostrar_error
 from app.core.configuracion import Configuracion
 from app.core.excepciones import ConfiguracionError
 
-
 def aplicar_tema_claro(app: QApplication) -> None:
-    """Tema claro fijo para toda la app."""
     if not app:
         return
     try:

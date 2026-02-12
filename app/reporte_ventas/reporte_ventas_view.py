@@ -1,4 +1,3 @@
-# app/reporte_ventas/reporte_ventas_view.py
 from __future__ import annotations
 
 from datetime import date
@@ -30,7 +29,7 @@ class ReporteVentasView(BaseModuleWindow):
         self.ui = Ui_ReporteVentas()
         self.ui.setupUi(self)
 
-        # Estado del botón Exportar (para explicar por qué está bloqueado)
+        # Estado del botón Exportar
         self._export_reason: str = ""
         self._export_filter = DisabledClickFilter(self, lambda: self._export_reason, title="Exportar deshabilitado")
         self.ui.btnExportar.installEventFilter(self._export_filter)
@@ -47,7 +46,7 @@ class ReporteVentasView(BaseModuleWindow):
         self._configurar()
         self._conectar()
 
-        # --- Sorting + Buscador (Cliente/Pedido) ---
+        # Buscador
         self._enhancer = TableEnhancer((self.ui.tableSimples,), search_columns=(1, 10))
         self._crear_buscador()
 
@@ -61,15 +60,11 @@ class ReporteVentasView(BaseModuleWindow):
         self._txt_buscar.setPlaceholderText("Buscar por cliente o pedido…")
         fila.addWidget(lbl)
         fila.addWidget(self._txt_buscar, 1)
-        # Inserta después de la barra de progreso (antes de la tabla)
         layout.insertLayout(3, fila)
 
         self._txt_buscar.textChanged.connect(lambda t: self._enhancer.apply_search(self.ui.tableSimples, t))
-    # --------------------------------------------------
-    # UI
-    # --------------------------------------------------
+
     def _configurar(self):
-        # Por defecto: Desde 01/01/2026 y Hasta el día actual.
         self.ui.dateDesde.setDate(QDate(2026, 1, 1))
         self.ui.dateHasta.setDate(QDate.currentDate())
 
@@ -108,12 +103,9 @@ class ReporteVentasView(BaseModuleWindow):
     def _set_export_enabled(self, enabled: bool, reason: str = "") -> None:
         self.ui.btnExportar.setEnabled(enabled)
         self._export_reason = "" if enabled else (reason or "Exportar no está disponible.")
-        # Tooltip útil incluso si el usuario no hace click
         self.ui.btnExportar.setToolTip("" if enabled else self._export_reason)
 
-    # --------------------------------------------------
-    # Validaciones
-    # --------------------------------------------------
+
     def _validar_rango_fechas(self, desde: date, hasta: date) -> bool:
         hoy = QDate.currentDate().toPython()
 
@@ -130,9 +122,7 @@ class ReporteVentasView(BaseModuleWindow):
 
         return True
 
-    # --------------------------------------------------
-    # Navegación
-    # --------------------------------------------------
+
     def _volver_menu(self):
         self._cancelar_si_hay_proceso()
         self._detener_hilo()
@@ -150,9 +140,7 @@ class ReporteVentasView(BaseModuleWindow):
             pass
         event.accept()
 
-    # --------------------------------------------------
-    # Hilos
-    # --------------------------------------------------
+
     def _detener_hilo(self):
         if self.thread and isValid(self.thread):
             try:
@@ -165,21 +153,14 @@ class ReporteVentasView(BaseModuleWindow):
         self.worker = None
 
     def _cancelar_si_hay_proceso(self):
-        # ✅ Marca cancelación solo cuando el usuario cancela (o cerramos por navegación)
         self._cancel_requested = True
-
-        # ✅ Solo cerrar el diálogo si está abierto (pero sin disparar "cancel" por cierre normal)
         if self.dialogo:
             try:
-                # esto lo cierra como "cancelado"
                 self.dialogo.reject()
             except Exception:
                 pass
             self.dialogo = None
 
-    # --------------------------------------------------
-    # Generar
-    # --------------------------------------------------
     def _generar(self):
         self._detener_hilo()
 
@@ -189,7 +170,6 @@ class ReporteVentasView(BaseModuleWindow):
         if not self._validar_rango_fechas(desde, hasta):
             return
 
-        # ✅ Nueva ejecución = no está cancelado
         self._cancel_requested = False
 
         self._generado = False
@@ -206,7 +186,6 @@ class ReporteVentasView(BaseModuleWindow):
         self.dialogo.reset()
         self.dialogo.set_mensaje("Generando reporte...")
 
-        # ✅ SOLO si el usuario cancela/cierra (reject)
         self.dialogo.rejected.connect(self._cancelar_si_hay_proceso)
 
         self.dialogo.show()
@@ -242,7 +221,6 @@ class ReporteVentasView(BaseModuleWindow):
             self.dialogo.set_mensaje(mensaje)
 
     def _finalizar(self, modelo_pedidos, _modelo_vacio):
-        # ✅ OJO: cerrar como "OK" para NO disparar rejected/cancel
         if self.dialogo:
             try:
                 self.dialogo.accept()
@@ -256,7 +234,6 @@ class ReporteVentasView(BaseModuleWindow):
             self._generado = False
             return
 
-        # ✅ sorting + filtrado (proxy)
         self._enhancer.set_models((modelo_pedidos,))
 
         self.ui.labelEstado.setText("Reporte generado correctamente")
@@ -268,13 +245,11 @@ class ReporteVentasView(BaseModuleWindow):
     def _error(self, mensaje):
         if self.dialogo:
             try:
-                # si hubo error, cerramos como cancelado
                 self.dialogo.reject()
             except Exception:
                 pass
             self.dialogo = None
 
-        # Cancelación silenciosa
         if mensaje == "__CANCELADO__" or self._cancel_requested:
             self.ui.labelEstado.setText("")
             self.ui.btnExportar.setEnabled(False)
@@ -283,15 +258,7 @@ class ReporteVentasView(BaseModuleWindow):
 
         mostrar_error(mensaje, self)
 
-    # --------------------------------------------------
-    # Exportar
-    # --------------------------------------------------
     def _filas_ordenadas(self):
-        """Devuelve dicts en el orden visible (proxy: filtro + sort).
-
-        ControladorReporteVentas.exportar_excel espera una lista[dict] con keys.
-        La tabla usa QSortFilterProxyModel, así que mapeamos proxy -> source.
-        """
         proxy = self.ui.tableSimples.model()
         if proxy is None:
             return []
@@ -311,7 +278,6 @@ class ReporteVentasView(BaseModuleWindow):
                     filas.append({})
             return filas
 
-        # Fallback: lo que se ve (puede perder keys, pero evita crashear)
         filas = []
         for r in range(proxy.rowCount()):
             fila = {}

@@ -1,4 +1,3 @@
-# app/core/controlador_credenciales.py
 from __future__ import annotations
 
 from app.core.configuracion import Configuracion
@@ -49,5 +48,4 @@ class ControladorCredenciales:
             )
             return cliente.probar_conexion()
         except WooCommerceConexionError as e:
-            # mensaje listo para mostrar en UI
             raise WooCommerceConexionError(f"No se pudo conectar con WooCommerce: {e}")

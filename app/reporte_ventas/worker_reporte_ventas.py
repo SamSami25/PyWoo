@@ -1,6 +1,4 @@
-# app/reporte_ventas/worker_reporte_ventas.py
 from PySide6.QtCore import QObject, Signal, Slot
-
 
 class WorkerReporteVentas(QObject):
     progreso = Signal(int, str)
@@ -12,7 +10,6 @@ class WorkerReporteVentas(QObject):
         self.controlador = controlador
         self.desde = desde
         self.hasta = hasta
-        # should_cancel: callable -> bool
         self.should_cancel = should_cancel
 
     @Slot()
@@ -22,12 +19,11 @@ class WorkerReporteVentas(QObject):
                 self.desde,
                 self.hasta,
                 callback_progreso=self.progreso.emit,
-                should_cancel=self.should_cancel,  # ✅ ya soportado en el controlador
+                should_cancel=self.should_cancel,
             )
             self.terminado.emit(*modelos)
         except Exception as e:
             msg = str(e)
-            # ✅ Cancelación silenciosa (no error real)
             if msg == "__CANCELADO__":
                 self.error.emit("__CANCELADO__")
             else:

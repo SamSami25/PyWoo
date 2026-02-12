@@ -1,6 +1,4 @@
-# app/lista_distribuidores/worker_lista_distribuidores.py
 from PySide6.QtCore import QObject, Signal
-
 
 class WorkerListaDistribuidores(QObject):
     progreso = Signal(int, str)

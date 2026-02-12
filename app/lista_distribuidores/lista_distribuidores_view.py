@@ -1,4 +1,3 @@
-# app/lista_distribuidores/lista_distribuidores_view.py
 from PySide6.QtCore import QThread, QDate, QEvent, Qt, QUrl
 from PySide6.QtWidgets import QFileDialog, QHeaderView, QHBoxLayout, QLabel, QLineEdit, QPushButton
 from PySide6.QtGui import QDesktopServices, QCursor
@@ -14,7 +13,7 @@ from app.core.dialogos import mostrar_error, mostrar_info
 from app.core.table_enhancer import TableEnhancer
 from app.core.disabled_click_filter import DisabledClickFilter
 
-COL_URL = 11  # URL es la última columna
+COL_URL = 11
 
 
 class ListaDistribuidoresView(BaseModuleWindow):
@@ -24,7 +23,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self.ui = Ui_ListaDistribuidores()
         self.ui.setupUi(self)
 
-        # Estado del botón Exportar (para explicar por qué está bloqueado)
+        # Estado del botón Exportar
         self._export_reason: str = ""
         self._export_filter = DisabledClickFilter(self, lambda: self._export_reason, title="Exportar deshabilitado")
         self.ui.btnExportar.installEventFilter(self._export_filter)
@@ -42,11 +41,11 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._configurar()
         self._conectar()
 
-        # --- Sorting + Buscador (SKU/NOMBRE) ---
+        # Buscador
         self._enhancer = TableEnhancer((self.ui.tableSimples, self.ui.tableVariados), search_columns=(0, 1))
         self._crear_buscador()
 
-        # ✅ cursor mano al pasar por URL
+        # URL
         self.ui.tableSimples.viewport().installEventFilter(self)
         self.ui.tableVariados.viewport().installEventFilter(self)
 
@@ -55,7 +54,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
             header = tabla.horizontalHeader()
             header.setSectionResizeMode(QHeaderView.ResizeToContents)
             header.setStretchLastSection(False)
-            header.setSectionResizeMode(COL_URL, QHeaderView.Stretch)  # ✅ URL ocupa el resto
+            header.setSectionResizeMode(COL_URL, QHeaderView.Stretch)  # URL
 
         self._set_export_enabled(False, "Genera la lista para habilitar Exportar.")
         self.ui.labelEstado.setText("")
@@ -77,7 +76,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._txt_buscar.setPlaceholderText("Buscar por SKU o nombre…")
         fila.addWidget(lbl)
         fila.addWidget(self._txt_buscar, 1)
-        # Inserta después de la barra de progreso (antes de tabs)
+        # Inserta después de la barra de progreso
         layout.insertLayout(3, fila)
 
         self._txt_buscar.textChanged.connect(self._on_buscar)
@@ -104,7 +103,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self.ui.btnExportar.clicked.connect(self._exportar)
         self.ui.btnVolver.clicked.connect(self._volver_menu)
 
-        # ✅ abrir URL con click
+        # Abrir URL
         self.ui.tableSimples.clicked.connect(self._abrir_url_desde_click)
         self.ui.tableVariados.clicked.connect(self._abrir_url_desde_click)
 
@@ -199,7 +198,6 @@ class ListaDistribuidoresView(BaseModuleWindow):
                     return True
             return False
 
-        # Columnas opcionales: VARIACIÓN / OBSERVACIÓN / URL
         opcionales = [COL_VARIACION, COL_OBS, COL_URL]
         pares = [
             (self.ui.tableSimples, self.controlador.simples),
@@ -215,10 +213,8 @@ class ListaDistribuidoresView(BaseModuleWindow):
     def _finalizar(self, modelo_simples, modelo_variados):
         self._cerrar_dialogo()
 
-        # Envolver en proxy (sorting + filtro)
         self._enhancer.set_models((modelo_simples, modelo_variados))
 
-        # Ocultar columnas opcionales que no existan en la data
         self._aplicar_columnas_dinamicas()
 
         for tabla in (self.ui.tableSimples, self.ui.tableVariados):
@@ -278,7 +274,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
         self._set_export_enabled(False, "Genera la lista para habilitar Exportar.")
         self._generado = False
 
-    # ✅ abrir URL al click
+    # Abrir URL al click
     def _abrir_url_desde_click(self, index):
         if not index.isValid() or index.column() != COL_URL:
             return
@@ -286,7 +282,7 @@ class ListaDistribuidoresView(BaseModuleWindow):
         if url:
             QDesktopServices.openUrl(QUrl(url))
 
-    # ✅ cursor mano SOLO cuando el mouse está sobre la columna URL
+    # URL
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseMove:
             tabla = None
@@ -303,7 +299,6 @@ class ListaDistribuidoresView(BaseModuleWindow):
                     tabla.viewport().unsetCursor()
 
         elif event.type() == QEvent.Leave:
-            # cuando sale el mouse del viewport
             if obj in (self.ui.tableSimples.viewport(), self.ui.tableVariados.viewport()):
                 obj.unsetCursor()
 

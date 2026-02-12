@@ -1,4 +1,3 @@
-# app/lista_distribuidores/controlador_lista_distribuidores.py
 from __future__ import annotations
 
 from typing import Any, List, Tuple
@@ -11,9 +10,6 @@ import xlsxwriter
 from app.core.cliente_woocommerce import ClienteWooCommerce
 
 
-# ---------------------------------------
-# Columnas INTERNAS (para la tabla del app)
-# ---------------------------------------
 HEADERS_INTERNAL = [
     "SKU",
     "NOMBRE DEL PRODUCTO",
@@ -43,9 +39,6 @@ COL_OBS = 10
 COL_URL = 11
 
 
-# ---------------------------------------
-# Columnas EXPORT (para distribuidores)
-# ---------------------------------------
 HEADERS_EXPORT = [
     "SKU",
     "NOMBRE DEL PRODUCTO",
@@ -70,7 +63,7 @@ EXPORT_COLS_MAP = [
 
 
 def _to_dec(x: Any) -> Decimal:
-    """Convierte a Decimal (redondeo financiero al final)."""
+    """Convierte a Decimal."""
     if x is None:
         return Decimal("0")
     s = str(x).strip()
@@ -100,7 +93,6 @@ def _to_int(x: Any) -> int:
 
 
 def _safe_str(x: Any) -> str:
-    # Evita celdas vacías en UI/export (requisito: no vacíos)
     if x is None:
         return "N/A"
     s = str(x)
@@ -128,14 +120,6 @@ def _fmt_2_dec_trim(x: Any) -> str:
 
 
 class ModeloTablaDistribuidores(QAbstractTableModel):
-    """
-    - robusto (no revienta con None)
-    - centrado (URL alineada a la izquierda)
-    - headers en negrita
-    - URL: azul + subrayado + tooltip (cursor se maneja en el view)
-    - GANANCIA: máximo 2 decimales (visualmente)
-    """
-
     def __init__(self, datos: List[List[Any]]):
         super().__init__()
         self._datos = datos
@@ -165,7 +149,6 @@ class ModeloTablaDistribuidores(QAbstractTableModel):
             return Qt.AlignCenter
 
         if role == Qt.DisplayRole:
-            # ✅ GANANCIA con máximo 2 decimales (solo visual)
             if col == COL_GANANCIA:
                 return _fmt_2_dec_trim(valor)
             return _safe_str(valor)
@@ -236,7 +219,6 @@ class ControladorListaDistribuidores:
         if stock <= 0:
             return
 
-        # ✅ Evita diferencias de centavos (Decimal + redondeo financiero)
         pvp_d = _clamp_nonneg_dec(_to_dec(p.get("price")))
         p_compra_d = _clamp_nonneg_dec(_to_dec(p.get("purchase_price")))
 
@@ -248,7 +230,6 @@ class ControladorListaDistribuidores:
 
         descuento_pct = max(self._por_descuento(ganancia), 0.0)
         descuento_valor_d = _q2(_clamp_nonneg_dec(Decimal(str(descuento_pct)) * pvp_d))
-        # No permitir que el descuento sea mayor al PVP
         if descuento_valor_d > pvp_d:
             descuento_valor_d = _q2(pvp_d)
         pvd_d = _q2(_clamp_nonneg_dec(pvp_d - descuento_valor_d))
@@ -257,7 +238,6 @@ class ControladorListaDistribuidores:
         if margen_negativo:
             obs = (obs + " | " if obs else "") + "MARGEN NEGATIVO (REVISAR COSTO)"
 
-        # Guardamos None en campos opcionales para poder ocultar columnas si no existen en la tienda.
         obs_val = obs.strip() if isinstance(obs, str) else obs
         if not obs_val:
             obs_val = None
@@ -267,11 +247,11 @@ class ControladorListaDistribuidores:
         self.simples.append([
             ((p.get("sku") or "").strip() or "(SIN SKU)"),
             ((p.get("name", "") or "").strip() or "(SIN NOMBRE)"),
-            None,  # VARIACIÓN (no aplica en simple)
+            None,
             stock,
             float(_q2(pvp_d)),
             float(_q2(p_compra_d)),
-            ganancia,  # interno 4 decimales
+            ganancia,
             round(descuento_pct * 100, 2),
             float(descuento_valor_d),
             float(pvd_d),
@@ -294,8 +274,6 @@ class ControladorListaDistribuidores:
             if stock <= 0:
                 continue
 
-            # ✅ Decimal para evitar diferencias de centavos
-            # ✅ Evita negativos
             pvp_d = _clamp_nonneg_dec(_to_dec(v.get("price") or v.get("regular_price")))
             p_compra_d = _clamp_nonneg_dec(_to_dec(v.get("purchase_price")))
 
@@ -321,7 +299,6 @@ class ControladorListaDistribuidores:
             if margen_negativo:
                 obs = (obs + " | " if obs else "") + "MARGEN NEGATIVO (REVISAR COSTO)"
 
-            # Guardamos None en campos opcionales para poder ocultar columnas si no existen en la tienda.
             obs_val = obs.strip() if isinstance(obs, str) else obs
             if not obs_val:
                 obs_val = None
@@ -345,7 +322,7 @@ class ControladorListaDistribuidores:
 
     def exportar_excel(self, ruta: str, simples=None, variados=None):
         """
-        ✅ EXPORT SOLO PARA DISTRIBUIDORES:
+        EXPORT SOLO PARA DISTRIBUIDORES:
         SKU | NOMBRE | VARIACIÓN | STOCK | PVP | PVD | OBSERVACIÓN | URL
         (en 2 hojas: Simples / Variados)
         """
@@ -387,7 +364,7 @@ class ControladorListaDistribuidores:
                             ws.write(row_i, out_col, "", cell)
                         continue
 
-                    # precios (PVP, PVD) -> formato moneda
+                    # precios (PVP, PVD)
                     if internal_col in (COL_PVP, COL_PVD):
                         ws.write_number(row_i, out_col, float(_q2(_to_dec(val))), money)
                         continue

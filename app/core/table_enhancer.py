@@ -1,4 +1,3 @@
-# app/core/table_enhancer.py
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,10 +11,7 @@ from PySide6.QtWidgets import QTableView, QHeaderView
 
 
 def _as_decimal(x) -> Decimal:
-    """Convierte (lo mejor posible) a Decimal.
-
-    - Soporta strings con coma decimal.
-    - Si no se puede convertir, devuelve Decimal('0').
+    """Convierte a Decimal.
     """
     if x is None:
         return Decimal("0")
@@ -70,10 +66,6 @@ class MultiColumnSortFilterProxy(QSortFilterProxyModel):
         if not s:
             return None
 
-        # ISO básico con o sin hora
-        # 2026-02-07
-        # 2026-02-07 10:30
-        # 2026-02-07 10:30:45
         m = re.match(r"^(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2})(?::(\d{2}))?)?", s)
         if not m:
             return None
@@ -90,29 +82,21 @@ class MultiColumnSortFilterProxy(QSortFilterProxyModel):
             return None
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
-        """Ordena de forma consistente para TODAS las columnas.
-
-        Reglas:
-        1) Si parecen fechas ISO => compara como fecha.
-        2) Si parecen números => compara como número (Decimal).
-        3) Caso contrario => texto.
-        """
         l = left.data(Qt.DisplayRole)
         r = right.data(Qt.DisplayRole)
 
         ls = str(l or "").strip()
         rs = str(r or "").strip()
 
-        # 1) Fechas primero (evita que las trate como numérico)
+        # 1) Fechas primero
         ldtt = self._try_parse_datetime(ls)
         rdtt = self._try_parse_datetime(rs)
         if ldtt is not None and rdtt is not None:
             return ldtt < rdtt
 
-        # 2) Intento numérico
+        # 2) Numérico
         try:
             if ls and rs:
-                # Solo si se ven como valores (tienen dígitos)
                 if any(ch.isdigit() for ch in ls) and any(ch.isdigit() for ch in rs):
                     ld = _as_decimal(ls)
                     rd = _as_decimal(rs)
@@ -143,7 +127,6 @@ class TableEnhancer:
             proxy = MultiColumnSortFilterProxy(search_columns=search_columns, parent=t)
             self._items.append(EnhancedTable(table=t, proxy=proxy))
 
-            # UX tabla
             t.setSortingEnabled(True)
             t.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
             t.setSelectionMode(QTableView.SelectionMode.SingleSelection)
@@ -152,7 +135,6 @@ class TableEnhancer:
             hdr.setSortIndicatorShown(True)
             hdr.setSectionResizeMode(QHeaderView.Interactive)
 
-            # Mantener selección azul incluso si el foco está en el buscador
             t.setStyleSheet(
                 "QTableView::item:selected:!active {"
                 " background: palette(highlight);"
@@ -166,15 +148,11 @@ class TableEnhancer:
             it.proxy.setSourceModel(m)
             it.table.setModel(it.proxy)
 
-            # IMPORTANTE: en Qt/PySide, al cambiar el modelo la vista puede
-            # perder el estado interno del sorting. Re-habilitamos y forzamos
-            # un sort inicial para garantizar que el click en encabezados
-            # funcione SIEMPRE.
             it.table.setSortingEnabled(True)
             hdr = it.table.horizontalHeader()
             hdr.setSortIndicatorShown(True)
             hdr.setSectionsClickable(True)
-            # Si ya existe indicador, respetar; caso contrario ordenar por 1ra columna.
+
             col = hdr.sortIndicatorSection() if hdr.sortIndicatorSection() >= 0 else 0
             order = hdr.sortIndicatorOrder()
             it.table.sortByColumn(col, order)
@@ -188,7 +166,7 @@ class TableEnhancer:
         text = (text or "").strip()
         for it in self._items:
             if it.table is table:
-                # regex seguro (escape) para buscar "contiene"
+
                 if not text:
                     it.proxy.setFilterRegularExpression(QRegularExpression(""))
                     it.table.clearSelection()
@@ -198,7 +176,6 @@ class TableEnhancer:
                 rx = QRegularExpression(pattern, QRegularExpression.CaseInsensitiveOption)
                 it.proxy.setFilterRegularExpression(rx)
 
-                # Selecciona la primera fila filtrada (pinta azul como selección)
                 if it.proxy.rowCount() > 0:
                     it.table.selectRow(0)
                     it.table.scrollTo(it.proxy.index(0, 0))

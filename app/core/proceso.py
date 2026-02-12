@@ -1,4 +1,3 @@
-# app/core/proceso.py
 from __future__ import annotations
 
 from PySide6.QtWidgets import QDialog
@@ -26,17 +25,12 @@ class ProcessDialog(QDialog):
 
         self.reset()
 
-        # ✅ Cancelar = reject (así se detecta como cancel real)
         self.ui.btnCancelar.clicked.connect(self.reject)
 
     def closeEvent(self, event):
-        # ✅ La X también es cancel real
         self.reject()
         event.ignore()
 
-    # ------------------------
-    # API pública
-    # ------------------------
     def set_titulo(self, texto: str):
         self.ui.lblTitulo.setText(texto)
 

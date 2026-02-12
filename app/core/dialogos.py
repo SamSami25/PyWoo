@@ -1,11 +1,8 @@
-# app/core/dialogos.py
 from __future__ import annotations
 
 from PySide6.QtWidgets import QMessageBox
 
-
 def _apply_box_style(box: QMessageBox) -> None:
-    # Estilo mínimo para que el botón OK siempre sea visible aunque haya QSS global
     box.setStyleSheet(
         "QMessageBox{background:#ffffff;}"
         "QLabel{color:#111; font-size:10pt;}"
